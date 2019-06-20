@@ -44,7 +44,16 @@ class State {
      * @return {Any} invoked Action
      */
     static decorator(action, target, name, descriptor) {
-        return this[action].bind(target[name]);
+        if (!(target[name].$state instanceof State)) {
+            throw new Error('need inject State or assign this.$state');
+        }
+        return this[action].bind(this, target[name]);
+    }
+    /**
+     * inject Reference
+     * @param {Object} ref
+     */
+    static inject(ref) {
     }
     /**
      * @memberof State
@@ -73,7 +82,7 @@ class State {
             this.merge,
             FixedType.spread(State)
         );
-        this[_baseStateSymbol].init();
+        this.history = [this[_baseStateSymbol]];
         this[_eventHandlersSymbol] = new Map();
         reflectState.set(key, this);
     }
@@ -94,12 +103,12 @@ class State {
     }
     /**
      * @memberof State
-     * @param {Any} key
      * @param {Any} value
      * @return {Any} returns value`
      */
-    setState(key, value) {
-        this.__state.set(key, value);
+    set(value) {
+        this[_baseStateSymbol] = new Map(Object.entries(value));
+        this.history.push(this[_baseStateSymbol]);
         return value;
     }
     /**
@@ -107,7 +116,8 @@ class State {
      * @description rollback State
      * @return {Promise<State>};
      */
-    async rollback() {
+    async revert() {
+        [this[_baseStateSymbol]] = this.history.splice(-1, 1);
         return this;
     }
 }
@@ -116,9 +126,9 @@ const ProxyConstructor = FixedType.expect(
     FixedType.Array(FixedType.Array(FixedType.Any)),
     FixedType.Any
 );
-const useState = State.decorator('useState');
+const bind = State.decorator('observe');
 export default ProxyConstructor;
 export {
     State as ProxyConstructor,
-    useState
+    bind
 };

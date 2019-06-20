@@ -15,13 +15,12 @@ class ObserveElement extends Component {
     }
     /**
      * @param {State} props
-     * @param {Element} slots
      * @param {ElementGenerator} h
      * @throws {Error} need implements
      * @return {HTMLElement}
      */
-    render(props, slots, h) {
-        return super.render(props, slots, h);
+    render(props, h) {
+        return super.render(props, h);
     }
 }
 export default ObserveElement;

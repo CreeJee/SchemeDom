@@ -35,34 +35,34 @@ class Component {
      */
     constructor() {
         // this.$state =  {extendsState}
+        this.$props = {};
     }
     /**
      * render
      * @param {State} props
-     * @param {Element} slots
      * @param {ElementGenerator} h
      * @throws {Error} need implements
      * @return {HTMLElement}
      */
-    async render(props, slots, h = ElementGenerator) {
+    async render(props, h = ElementGenerator) {
         throw new Error(`"need implements ${this.constructor.name}.action`);
     }
     /**
      * @param {State} props
-     * @param {Element} slots
      * @description if mutation is not defined just re render
      * @return {Element}
      */
-    async mutation(props, slots) {
-        return this.render(props, slots);
+    async mutation(props) {
+        return this.render(props);
     }
     /**
-     * @param {Element} elementData
      * @param {HTMLElement} mountDom
      * @param {HTMLElement} mountedArea
      */
-    static async mount(elementData, mountDom) {
-        mountDom.appendChild(elementData.render);
+    static async mount(mountDom) {
+        mountDom.appendChild(this.render(
+            this.$props
+        ));
         return mountDom;
     }
 }

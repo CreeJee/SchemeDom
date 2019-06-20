@@ -12,6 +12,7 @@
   "author": "CreeJee",
   "license": "MIT",
   "devDependencies": {
+    "babel-eslint": "^10.0.2",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-config-google": "^0.13.0",
