@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>TEST</title>
+</head>
+<body>
+    
+</body>
+<script type="module">
+    import { Component } from "../src/Component.js";
+    import { ObserveComponent } from "../src/ObserveComponent.js";
+    class TestComponent extends Component{
+        render(u){
+            return u("div",{},
+                    u("span",{text : "span"}),
+                    u("h2",{text : "h2"})
+                
+            )
+        }
+    }
+    Component.mount(document.body,new TestComponent)
+
+</script>
+</html>

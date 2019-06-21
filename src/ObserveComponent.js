@@ -1,9 +1,9 @@
 import Component from './Component.js';
 import {State} from './State.js';
 /**
- * ObserveElement
+ * ObserveComponent
  */
-class ObserveElement extends Component {
+class ObserveComponent extends Component {
     /**
      * @param {String} key reflect key
      * @param  {...any} used used boundedState
@@ -14,13 +14,14 @@ class ObserveElement extends Component {
         State.observe(this.render, ...used);
     }
     /**
-     * @param {State} props
      * @param {ElementGenerator} h
+     * @param {State} props
      * @throws {Error} need implements
      * @return {HTMLElement}
      */
-    render(props, h) {
-        return super.render(props, h);
+    render(h, props) {
+        return super.render(h, props);
     }
 }
-export default ObserveElement;
+export default ObserveComponent;
+export {ObserveComponent};

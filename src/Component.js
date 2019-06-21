@@ -15,15 +15,25 @@ const _elementEffect = (element, invokeStr) => (
     ([k, v]) => _invoke(element, `this.${invokeStr}(k,v)`, {k, v})
 );
 const ElementGenerator = FixedType.expect(
-    (tagName, classObj, attributes) =>{
+    (tagName, attributes, ...children) =>{
         const el = document.createElement(tagName);
+        const text = attributes.text;
+
+        el.textContent = text;
+        delete attributes.text;
+
         Object.entries(attributes).forEach(_elementEffect(el, 'setAttribute'));
-        Object.entries(classObj).forEach(_elementEffect(el, 'classList.add'));
+        children.forEach((v)=>el.appendChild(v));
+        return el;
     },
     String,
     Object,
-    Object
+    FixedType.spread(HTMLElement)
 );
+// const ComponentGenerator = FixedType.expect(
+//     ()
+// );
+
 /**
 * @param {Function} Parent
 * @return {Element}
@@ -35,34 +45,42 @@ class Component {
      */
     constructor() {
         // this.$state =  {extendsState}
+        this.$ref = null;
         this.$props = {};
+        this.$slots = [];
     }
     /**
      * render
-     * @param {State} props
      * @param {ElementGenerator} h
+     * @param {State} props
+     * @param {Element} slots
      * @throws {Error} need implements
      * @return {HTMLElement}
      */
-    async render(props, h = ElementGenerator) {
+    async render(h = ElementGenerator, props, slots) {
         throw new Error(`"need implements ${this.constructor.name}.action`);
     }
     /**
      * @param {State} props
+     * @param {Element} slots
      * @description if mutation is not defined just re render
      * @return {Element}
      */
-    async mutation(props) {
-        return this.render(props);
+    async mutation(props, slots) {
+        return this.render(ElementGenerator, props, slots);
     }
     /**
      * @param {HTMLElement} mountDom
-     * @param {HTMLElement} mountedArea
+     * @param {Component} component
      */
-    static async mount(mountDom) {
-        mountDom.appendChild(this.render(
-            this.$props
-        ));
+    static async mount(mountDom, component) {
+        // render ref logic
+        this.$ref = await component.render(
+            ElementGenerator,
+            this.$props,
+            this.$slots,
+        );
+        mountDom.appendChild(this.$ref);
         return mountDom;
     }
 }

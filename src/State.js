@@ -44,10 +44,7 @@ class State {
      * @return {Any} invoked Action
      */
     static decorator(action, target, name, descriptor) {
-        if (!(target[name].$state instanceof State)) {
-            throw new Error('need inject State or assign this.$state');
-        }
-        return this[action].bind(this, target[name]);
+        return this[action].bind(this, action);
     }
     /**
      * inject Reference
@@ -123,12 +120,12 @@ class State {
 }
 const ProxyConstructor = FixedType.expect(
     State,
-    FixedType.Array(FixedType.Array(FixedType.Any)),
+    FixedType.array(FixedType.array(FixedType.Any)),
     FixedType.Any
 );
 const bind = State.decorator('observe');
 export default ProxyConstructor;
 export {
-    State as ProxyConstructor,
+    ProxyConstructor as State,
     bind
 };

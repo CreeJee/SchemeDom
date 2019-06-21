@@ -206,7 +206,7 @@ const FixedBaseType = class FixedBaseType {
  * foo('a') // 'string'
  * foo(1) // 'number'
  */
-const FixedTypeSpread = class Spread extends FixedBaseType {
+const FixedTypeSpread = class FixedTypeSpread extends FixedBaseType {
     /**
      * @param {TypeTable} parent
      * @param {Function} objType
@@ -508,7 +508,7 @@ export default FixedType;
 export {
     FixedType,
     FixedBaseType,
-    FixedTypeAny as fixedTypeAny,
+    fixedTypeAny as FixedTypeAny,
     FixedTypeArray,
     FixedTypeSpread,
     FixedTypeOr
