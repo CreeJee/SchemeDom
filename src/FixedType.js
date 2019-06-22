@@ -210,12 +210,31 @@ const FixedTypeSpread = class FixedTypeSpread extends FixedBaseType {
     /**
      * @param {TypeTable} parent
      * @param {Function} objType
+     * @param {Any} obj
      * @return {null} when action fail
      * @return {Any} when action is success
      */
-    action(parent, objType) {
-        return Array.from(parent.keys())
-            .find((typeInstance) => typeInstance.same(objType)) ? parent : null;
+    action(parent, objType,obj) {
+        // this instancof 처리...
+        // 타입비교처리 필요
+        return (
+            (
+                this.TypeClass instanceof FixedTypeInstanceOf
+                    ? this.TypeClass.action(parent,objType,obj)
+                    : this.TypeClass.same(objType)
+            )
+                ? parent
+                : null
+        )
+        /* return Array.from(parent.keys())
+                    .find(
+                        (typeInstance) => (
+                            typeInstance instanceof FixedBaseType
+                                ? typeInstance[typeInstance instanceof FixedTypeInstanceof ? "same" : "action"]
+                                : typeInstance   
+                        ) 
+                    ) ? parent : null;
+        */
     }
 
     /**
@@ -269,10 +288,15 @@ const FixedTypeArray = class FixedTypeArray extends FixedBaseType {
      * @return {null}
      */
     action(parent, objType, obj) {
-        const cond = obj.every((v) => justLiteral(v) instanceof this.TypeClass);
+        const cond = obj.every((v) => this.same(justLiteral(v)));
         return cond ? parent.get(this) : null;
     }
 };
+const FixedTypeInstanceOf = class FixedTypeInstanceof extends FixedBaseType{
+    action(parent, objType, obj){
+        return obj instanceof this.TypeClass ? parent : null;
+    }
+}
 /**
  *Type Fixed Class
  *
@@ -289,7 +313,8 @@ class FixedType {
                 FixedTypeSpread,
                 FixedTypeOr,
                 FixedTypeAny,
-                FixedTypeArray
+                FixedTypeArray,
+                FixedTypeInstanceOf
             ],
         });
         return this;
@@ -397,7 +422,13 @@ class FixedType {
     static array(Type) {
         return new FixedTypeArray(Type);
     }
-
+    /**
+     * @param {Function} Type
+     * @return {FixedTypeInstanceOf}
+     */
+    static instanceof(Type){
+        return new FixedTypeInstanceOf(Type);
+    }
     /**
      * @private
      * @param {TypeTable} parent Derived from TypeListSymbol
@@ -425,6 +456,8 @@ class FixedType {
      * @param {...Any} args argument object
      * @return {undefined}
      * @throws {TypeError}
+     * 
+     * "strict cond table" vs "instanceof like table" 
     */
     search(referenced, ...args) {
         const stringArg = args.map(gainTypeName).join(',');
@@ -432,17 +465,19 @@ class FixedType {
         args.reduce(
             (parent, obj) => {
                 const TypeClass = justConstructor(obj);
+                const middlewareResult = this.callMiddleWare(parent, TypeClass, obj);
+                const isOverrideInstanceof = typeof TypeClass[Symbol.hasInstance] === 'function' ;
                 if (
                     parent.has(TypeClass)
                     || this.searchExtendTree(parent, TypeClass)
                     || (
-                        typeof TypeClass[Symbol.hasInstance] === 'function' &&
-                        Array.from(parent.keys())
-                            .find(TypeClass[Symbol.hasInstance])
+                        isOverrideInstanceof
+                        && Array.from(parent.keys())
+                                .find(TypeClass[Symbol.hasInstance])
                     )
+                    || middlewareResult
                 ) {
-                    const result = this.callMiddleWare(parent, TypeClass, obj);
-                    return result || parent.get(TypeClass);
+                    return middlewareResult || parent.get(TypeClass);
                 }
                 throw errorObj;
             },

@@ -28,7 +28,7 @@ const ElementGenerator = FixedType.expect(
     },
     String,
     Object,
-    FixedType.spread(HTMLElement)
+    FixedType.spread(FixedType.instanceof(HTMLElement))
 );
 // const ComponentGenerator = FixedType.expect(
 //     ()
