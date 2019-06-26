@@ -21,21 +21,6 @@ const JUST_VALUE_CONFIG = Object.freeze({
 const isErrorValue = (obj) => obj === null || obj === undefined;
 
 /**
- *
- * @param {Function} obj
- * @return {Any}
- */
-const justLiteral = (obj) => {
-    if (isErrorValue(obj)) {
-        return obj;
-    } if (typeof obj !== 'object') {
-        // eslint-disable-next-line new-cap
-        return new obj.constructor.call(obj);
-    }
-    return obj;
-};
-
-/**
  *obj convert as Function or value
  * @param {Any} obj
  * @return {Function}
@@ -152,23 +137,26 @@ const propertyHandler = (instance) => ({
  * please do not break type instead of create new Type
  */
 const expect = (name, handler, value, ...args) => {
-    let proxyValue = value;
+    // let proxyValue = value;
+    if (!(value instanceof Object)) {
+        throw new Error('referenced Target is Must Object');
+    }
     if (
         !(
             typeof value[TypeListSymbol] === 'object' &&
             value[TypeListSymbol] instanceof TypeTable
         )
     ) {
-        proxyValue = new Proxy(value, handler);
+        // proxyValue = new Proxy(value, handler);
         justValueProps(
             value, {
                 [TypeListSymbol]: new TypeTable(),
-                [name]: expectBinder.bind(proxyValue, name, handler, proxyValue)
+                [name]: expectBinder.bind(value, name, handler, value)
             }
         );
     }
     args.reduce(expectBinder, value[TypeListSymbol]);
-    return proxyValue;
+    return value;
 };
 /**
  * @param {Function} TypeClass
@@ -186,7 +174,7 @@ const FixedBaseType = class FixedBaseType {
      * @return {Boolean} is same reference
      */
     same(type) {
-        return this.TypeClass === type;
+        return this.TypeClass === type || type;
     }
     /**
      * @param {Function} TypeClass
@@ -214,27 +202,18 @@ const FixedTypeSpread = class FixedTypeSpread extends FixedBaseType {
      * @return {null} when action fail
      * @return {Any} when action is success
      */
-    action(parent, objType,obj) {
+    action(parent, objType, obj) {
         // this instancof 처리...
         // 타입비교처리 필요
         return (
             (
-                this.TypeClass instanceof FixedTypeInstanceOf
-                    ? this.TypeClass.action(parent,objType,obj)
-                    : this.TypeClass.same(objType)
+                this.TypeClass instanceof FixedBaseType
+                    ? this.TypeClass.action(parent, objType, obj)
+                    : this.same(objType)
             )
                 ? parent
                 : null
-        )
-        /* return Array.from(parent.keys())
-                    .find(
-                        (typeInstance) => (
-                            typeInstance instanceof FixedBaseType
-                                ? typeInstance[typeInstance instanceof FixedTypeInstanceof ? "same" : "action"]
-                                : typeInstance   
-                        ) 
-                    ) ? parent : null;
-        */
+        );
     }
 
     /**
@@ -256,11 +235,17 @@ const FixedTypeOr = class FixedTypeOr extends FixedBaseType {
     /**
      * @param {TypeTable} parent
      * @param {Any} objType
+     * @param {Any} obj
      * @return {Any} is middleware is vaild
      * @return {null} is middleware is not vaild
      */
-    action(parent, objType) {
-        return this.TypeClass.includes(objType) ? this : null;
+    action(parent, objType, obj) {
+        const mappingLike = (o) =>(
+            o instanceof FixedBaseType ?
+                o.action(parent, objType, obj) :
+                obj instanceof o
+        );
+        return this.TypeClass.map(mappingLike).find((n)=>!!n);
     }
     /**
      * @param  {...Any} TypeClass
@@ -288,15 +273,25 @@ const FixedTypeArray = class FixedTypeArray extends FixedBaseType {
      * @return {null}
      */
     action(parent, objType, obj) {
-        const cond = obj.every((v) => this.same(justLiteral(v)));
+        const cond = obj.every((v) => this.same(justConstructor(v)));
         return cond ? parent.get(this) : null;
     }
 };
-const FixedTypeInstanceOf = class FixedTypeInstanceof extends FixedBaseType{
-    action(parent, objType, obj){
-        return obj instanceof this.TypeClass ? parent : null;
+/**
+ * Fixed Type instanceof Logic
+ */
+const FixedTypeInstanceOf = class FixedTypeInstanceof extends FixedBaseType {
+    /**
+     * @param {TypeTable} parent
+     * @param {Function} objType
+     * @param {Object} obj
+     * @return {Object}
+     * @return {null}
+     */
+    action(parent, objType, obj) {
+        return obj instanceof this.TypeClass ? parent.get(this) : null;
     }
-}
+};
 /**
  *Type Fixed Class
  *
@@ -426,7 +421,7 @@ class FixedType {
      * @param {Function} Type
      * @return {FixedTypeInstanceOf}
      */
-    static instanceof(Type){
+    static instanceof(Type) {
         return new FixedTypeInstanceOf(Type);
     }
     /**
@@ -441,13 +436,19 @@ class FixedType {
         const res = types.filter(
             (metaObj) => this.useProps.includes(justConstructor(metaObj))
         );
+        let reduced = false;
+        let lastIndex = -1;
         if (res.length > 0) {
-            return res.reduce(
+            reduced = res.reduce(
                 (relativeParent, v) => v.action(relativeParent, Type, obj),
                 parent
             );
+            // TODO middleware 순서 밀리는거 해결
+            lastIndex = types.indexOf(reduced);
         }
-        return false;
+        return reduced instanceof Object
+            ? reduced
+            : (types.length-1 === types[lastIndex+1]);
     }
 
     /**
@@ -456,8 +457,8 @@ class FixedType {
      * @param {...Any} args argument object
      * @return {undefined}
      * @throws {TypeError}
-     * 
-     * "strict cond table" vs "instanceof like table" 
+     *
+     * "strict cond table" vs "instanceof like table"
     */
     search(referenced, ...args) {
         const stringArg = args.map(gainTypeName).join(',');
@@ -465,26 +466,21 @@ class FixedType {
         args.reduce(
             (parent, obj) => {
                 const TypeClass = justConstructor(obj);
-                const middlewareResult = this.callMiddleWare(parent, TypeClass, obj);
-                const isOverrideInstanceof = typeof TypeClass[Symbol.hasInstance] === 'function' ;
+                const filterRes = this.callMiddleWare(parent, TypeClass, obj);
                 if (
                     parent.has(TypeClass)
-                    || this.searchExtendTree(parent, TypeClass)
-                    || (
-                        isOverrideInstanceof
-                        && Array.from(parent.keys())
-                                .find(TypeClass[Symbol.hasInstance])
-                    )
-                    || middlewareResult
+                    || filterRes
+                    // || Array.from(parent.keys()).find((v)=>obj instanceof v)
                 ) {
-                    return middlewareResult || parent.get(TypeClass);
+                    return filterRes || parent.get(TypeClass);
                 }
                 throw errorObj;
             },
             (
                 referenced instanceof TypeTable
                     ? referenced
-                    : referenced[TypeListSymbol])
+                    : referenced[TypeListSymbol]
+            )
         );
     }
 
@@ -506,37 +502,6 @@ class FixedType {
             return refObject.set(orInitValue) && orInitValue;
         }
         throw new Error('first argumetnt is not contained [@@TypeListSymbol]');
-    }
-
-    /**
-     * get closest vaild parent
-     * @param  {TypeTable} parent             [from [TypeListSymbol]]
-     * @param  {Function} classLike     [function Class,es6 class,etc...]
-     * @return {Function}                [that extended class]
-    */
-    searchExtendTree(parent, classLike) {
-        if (parent instanceof TypeTable && classLike instanceof Function) {
-            const parentProtoClass = Object.getPrototypeOf(classLike);
-            if (
-                parentProtoClass !== Object
-                && parentProtoClass.name
-            ) {
-                return parent.has(parentProtoClass)
-                    ? true
-                    : this.searchExtendTree(parent, parentProtoClass);
-            }
-            return false;
-        }
-        throw new Error('need arguments [TypeTable,ClassLike]');
-    }
-
-    /**
-     *use clear already binding middleware Elements
-        *
-        * @memberof FixedType
-        */
-    clear() {
-        this.useProps.splice(0);
     }
 }
 export default FixedType;

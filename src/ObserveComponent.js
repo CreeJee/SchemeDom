@@ -1,27 +1,53 @@
 import Component from './Component.js';
 import {State} from './State.js';
+import FixedType from './FixedType.js';
 /**
  * ObserveComponent
  */
 class ObserveComponent extends Component {
     /**
-     * @param {String} key reflect key
-     * @param  {...any} used used boundedState
+     * @param {State} state
      */
-    constructor(key, ...used) {
-        super();
-        this.$state = State.reflect(key);
-        State.observe(this.render, ...used);
+    constructor(state) {
+        super(state);
+        this.$state = state;
+        state.observe(this._updated.bind(this));
     }
     /**
-     * @param {ElementGenerator} h
-     * @param {State} props
-     * @throws {Error} need implements
-     * @return {HTMLElement}
+     * when needs mutation check
+     * @param {Object} props
+     * @return {Boolean}
      */
-    render(h, props) {
-        return super.render(h, props);
+    isUpdated(props = {}) {
+        return true;
+    }
+    /**
+     * @description use safe mutation props
+     * @param {Object} oldProps
+     * @return {Promise<Object>} delivedProps
+     */
+    async deliveredProps(oldProps) {
+    }
+    /**
+     * @private
+     * @param {Object} props
+     */
+    _updated(props) {
+        const slots = this.$slots;
+        if (
+            this.isUpdated(props)
+        ) {
+            setTimeout(async ()=>{
+                await this.deliveredProps(props);
+                this.$dom.innerHTML = '';
+                this.$dom.appendChild(this.mutation(props, slots));
+            }, 0);
+        }
     }
 }
-export default ObserveComponent;
-export {ObserveComponent};
+const ProxyedConstruct = FixedType.expect(
+    ObserveComponent,
+    State
+);
+export default ProxyedConstruct;
+export {ProxyedConstruct as ObserveComponent};

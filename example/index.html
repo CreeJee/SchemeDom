@@ -11,17 +11,47 @@
 </body>
 <script type="module">
     import { Component } from "../src/Component.js";
+    import { State } from "../src/State.js";
     import { ObserveComponent } from "../src/ObserveComponent.js";
-    class TestComponent extends Component{
+    class MutationComponent extends Component{
+        constructor(state){
+            super(state)
+        }
+        render(u,{text}){
+            return u("li",{text})
+        }
+        mutation(state,props){
+
+        }
+    }
+    let start = performance.now();
+    let end = 0;
+    const $state = new State({"count":10000});
+    const mutatedComp = new MutationComponent();
+    class RootComponent extends ObserveComponent{
+        constructor($state){
+            super($state);
+        }
         render(u){
-            return u("div",{},
-                    u("span",{text : "span"}),
-                    u("h2",{text : "h2"})
-                
+            let renderArray = Array.from({length:$state.get("count")},(v)=>"");
+            console.log($state.get("count"))
+            return u("ul",{},
+                ...renderArray.map((v,i)=>mutatedComp.render(u,{text : i}))
             )
         }
     }
-    Component.mount(document.body,new TestComponent)
-
+    const root = new RootComponent($state);
+    ObserveComponent.mount(
+        document.body,
+        root
+    );
+    setTimeout(()=>{
+        $state.set({"count" : 10});
+        end = performance.now();
+        console.log(end-start);
+    },
+    1000)
+    end = performance.now();
+    console.log(end-start);
 </script>
 </html>

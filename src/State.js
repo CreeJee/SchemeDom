@@ -19,22 +19,6 @@ class State {
         return reflectState.get(key);
     }
     /**
-     * @param {Function} observer
-     * @param {...Any} keys
-     * @static
-     */
-    static observe(observer, ...keys) {
-        const base = this[_eventHandlersSymbol];
-        keys.forEach((key)=>{
-            let eventList$ = base.get(key);
-            if (!Array.isArray(eventList$)) {
-                eventList$ = [];
-                base.set(key, eventList$);
-            }
-            eventList$.push(observer);
-        });
-    }
-    /**
      * @decorator
      * @static
      * @param {String} action
@@ -48,7 +32,7 @@ class State {
     }
     /**
      * inject Reference
-     * @param {Object} ref
+     * @param {State} ref
      */
     static inject(ref) {
     }
@@ -58,29 +42,9 @@ class State {
      * @param {Any} key
      */
     constructor(initState, key = this) {
-        Object.defineProperty(this, _baseStateSymbol, {
-            value: new Map(Object.entries(initState)),
-            writable: false,
-            enumerable: false,
-            configurable: false,
-        });
-        // method binder
-        this.boundState = FixedType.expect(
-            this.boundState,
-            Function,
-            FixedType.array(FixedType.any)
-        );
-        this.setState = FixedType.expect(
-            this.setState,
-            FixedType.any,
-            FixedType.any
-        );
-        this.merge = FixedType.expect(
-            this.merge,
-            FixedType.spread(State)
-        );
+        this[_baseStateSymbol] = new Map(Object.entries(initState));
+        this[_eventHandlersSymbol] = [];
         this.history = [this[_baseStateSymbol]];
-        this[_eventHandlersSymbol] = new Map();
         reflectState.set(key, this);
     }
     /**
@@ -106,7 +70,26 @@ class State {
     set(value) {
         this[_baseStateSymbol] = new Map(Object.entries(value));
         this.history.push(this[_baseStateSymbol]);
+        for (const observer of this[_eventHandlersSymbol]) {
+            observer(value);
+        }
         return value;
+    }
+    /**
+     * @param {Any} k
+     * @param {Any} v
+     * @return {Any}
+     */
+    get(k, v) {
+        return this[_baseStateSymbol].get(k);
+    }
+    /**
+     * @param {Function} observer
+     * @return {State}
+     */
+    observe(observer) {
+        this[_eventHandlersSymbol].push(observer);
+        return this;
     }
     /**
      * @memberof State
@@ -120,12 +103,12 @@ class State {
 }
 const ProxyConstructor = FixedType.expect(
     State,
-    FixedType.array(FixedType.array(FixedType.Any)),
-    FixedType.Any
+    FixedType.array(FixedType.array(FixedType.any)),
+    FixedType.any
 );
-const bind = State.decorator('observe');
+const bind = State.observe;
 export default ProxyConstructor;
 export {
     ProxyConstructor as State,
-    bind
+    bind,
 };
