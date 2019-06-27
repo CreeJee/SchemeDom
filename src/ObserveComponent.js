@@ -9,7 +9,7 @@ class ObserveComponent extends Component {
      * @param {State} state
      */
     constructor(state) {
-        super(state);
+        super({});
         this.$state = state;
         state.observe(this._updated.bind(this));
     }
@@ -34,13 +34,13 @@ class ObserveComponent extends Component {
      */
     _updated(props) {
         const slots = this.$slots;
-        if (
-            this.isUpdated(props)
-        ) {
+        if (this.isUpdated(props)) {
             setTimeout(async ()=>{
-                await this.deliveredProps(props);
-                this.$dom.innerHTML = '';
-                this.$dom.appendChild(this.mutation(props, slots));
+                const result = await this.deliveredProps(props);
+                if(typeof result === "object" && result !== null){
+                    props = result;
+                }
+                this.mutation(props,slots);
             }, 0);
         }
     }

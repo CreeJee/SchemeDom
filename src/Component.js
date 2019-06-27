@@ -1,23 +1,81 @@
-// TODO : side effect hook
-
 import {FixedType} from './FixedType.js';
+
+const isElementOrComponent = (v)=>(
+    v instanceof HTMLElement ||
+    v instanceof BaseComponent
+);
+const componentToDom = (o,mountZone) => {
+    let el = o.render(
+        elementGenerator.bind(o),
+        o.$props,
+        ...o.$slots
+    )
+    if(mountZone instanceof HTMLElement){
+        o.$zone = mountZone;
+    }
+    o.$ref = el instanceof BaseComponent ? componentToDom(el,mountZone) : el ;
+    return o.$ref;
+}
+const clearDom = (mountDom)=>mountDom.innerHTML = "";
+const renderDom = (mountDom,el)=>{
+    let isComponent = el instanceof BaseComponent;
+    if(isComponent){
+        el.$zone = mountDom;
+        el.$ref = componentToDom(el,mountDom);
+    }
+    mountDom.appendChild(isComponent ? el.$ref : el);
+}
+const elementGenerator = (tag, attributes, ...children) => {
+    const isBaseCond = attributes instanceof Object && children.every(isElementOrComponent);
+    if (typeof tag === 'string' && isBaseCond) {
+        const el = document.createElement(tag);
+        const {text,...attr} = attributes;
+        const entryAttr = Object.entries(attr);
+        if(text !== undefined){
+            el.textContent = text;
+        }
+        for (let index = 0; index < entryAttr.length; index++) {
+            const [k,v] = entryAttr[index];
+            el.setAttribute(k,v);
+        }
+        for (let index = 0; index < children.length; index++) {
+            renderDom(el,children[index]);
+        }
+        return el;
+    } else if(tag instanceof BaseComponent && isBaseCond) {
+        tag.$props = attributes;
+        tag.$slots = children;
+        return componentToDom(tag);
+        if(children.every(v=>v instanceof BaseComponent)){
+            debugger;
+        }
+    } else {
+        throw new Error(
+            'arguments must [[String|BaseComponent],Object,...[HTMLElement|BaseComponent]'
+        );
+    }
+};
+
+
 const BaseComponent = class baseComponent {
     /**
      * Base Component
      */
-    constructor() {
+    constructor({...props} = {}) {
         this.$ref = null;
-        this.$props = {};
+        this.$zone = null;
+        this.$props = props;
+        this.$children = [];
         this.$slots = [];
     }
     /**
      * render
-     * @param {ElementGenerator} h
+     * @param {elementGenerator} h
      * @param {State} props
      * @param {Element} slots
      * @throws {Error} need implements
      */
-    render(h = ElementGenerator, props, slots) {
+    render(h = elementGenerator.bind(this), props = this.$props, slots = this.$slots) {
         throw new Error(`"need implements ${this.constructor.name}.action`);
     }
 
@@ -28,74 +86,8 @@ const BaseComponent = class baseComponent {
      * @return {Element}
      */
     mutation(props, slots) {
-        return this.render(ElementGenerator, props, slots);
-    }
-};
-// const _invoke = (ref, str, param) => (
-//     (
-//         new Function(
-//             ...Object.keys(param).concat(str)
-//         )
-//     ).apply(
-//         ref,
-//         Object.values(param)
-//     )
-// );
-// const _elementEffect = (element, invokeStr) => (
-//     ([k, v]) => _invoke(element, `this.${invokeStr}(k,v)`, {k, v})
-// );
-// const ElementGenerator = FixedType.expect(
-//     (tagName, attributes, ...children) =>{
-//         const el = document.createElement(tagName);
-//         const text = attributes.text;
-
-//         el.textContent = text;
-//         delete attributes.text;
-
-//         Object.entries(attributes)
-//               .forEach(_elementEffect(el, 'setAttribute'));
-//         children.forEach((v)=>{
-//             return el.appendChild(el instanceof Component ? v.render() : v);
-//         });
-//         return el;
-//     },
-//     String,
-//     Object,
-//     FixedType.spread(
-//         FixedType.or(
-//             FixedType.instanceof(HTMLElement),
-//             FixedType.instanceof(BaseComponent)
-//         )
-//     )
-// );
-const isElementOrComponent = (v)=>(
-    v instanceof HTMLElement ||
-    v instanceof BaseComponent
-);
-const ElementGenerator = (tagName, attributes, ...children) =>{
-    if (
-        typeof tagName === 'string' &&
-        attributes instanceof Object &&
-        children.every(isElementOrComponent)) {
-        const el = document.createElement(tagName);
-        const text = attributes.text;
-
-        el.textContent = text;
-        delete attributes.text;
-
-        Object.entries(attributes).forEach(([k, v])=>el.setAttribute(k, v));
-        children.forEach((v)=>{
-            el.appendChild(
-                v instanceof Component ?
-                    v.render(ElementGenerator, v.$props, children) :
-                    v
-            );
-        });
-        return el;
-    } else {
-        throw new Error(
-            'arguments must [String,Object,...[HTMLElement|BaseComponent]'
-        );
+        clearDom(this.$zone);
+        return renderDom(this.$zone,this);
     }
 };
 /**
@@ -107,8 +99,8 @@ class Component extends BaseComponent {
      * Element constructor
      * @description on init default tag generate
      */
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
     }
     /**
      * @param {HTMLElement} mountDom
@@ -116,16 +108,9 @@ class Component extends BaseComponent {
      */
     static async mount(mountDom, component) {
         // render ref logic
-        component.$ref = component.render(
-            ElementGenerator,
-            this.$props,
-            this.$slots,
-        );
-        mountDom.innerHTML = '';
-        mountDom.appendChild(component.$ref);
-
-        component.$dom = mountDom;
-        return component.$dom;
+        clearDom(mountDom);
+        renderDom(mountDom,component);
+        return this;
     }
 }
 Component.mount = FixedType.expect(
@@ -137,6 +122,5 @@ Component.mount = FixedType.expect(
 export default Component;
 export {
     Component,
-    BaseComponent,
-    ElementGenerator
+    BaseComponent
 };

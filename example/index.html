@@ -13,40 +13,44 @@
     import { Component } from "../src/Component.js";
     import { State } from "../src/State.js";
     import { ObserveComponent } from "../src/ObserveComponent.js";
-    class MutationComponent extends Component{
-        constructor(state){
-            super(state)
-        }
-        render(u,{text}){
-            return u("li",{text})
-        }
-        mutation(state,props){
+    const $state = new State({"count":1});
 
+    class MutationComponent extends Component{
+        render(u,{text},...children){
+            return u("li",{},...children)
         }
     }
-    let start = performance.now();
-    let end = 0;
-    const $state = new State({"count":10000});
-    const mutatedComp = new MutationComponent();
     class RootComponent extends ObserveComponent{
         constructor($state){
             super($state);
         }
         render(u){
-            let renderArray = Array.from({length:$state.get("count")},(v)=>"");
-            console.log($state.get("count"))
+            const count = this.$state.get("count");
+            const renderArray = Array.from({length:count},(v)=>"");
             return u("ul",{},
-                ...renderArray.map((v,i)=>mutatedComp.render(u,{text : i}))
+                ...renderArray.map((_,i)=>(
+                    u(new MutationComponent(),{},
+                        u("p",{text : i})
+                    )
+                ))
             )
         }
     }
-    const root = new RootComponent($state);
+    class RouterComponent extends Component{
+        render(u){
+            return new RootComponent($state);
+        }
+    }
+    let start = performance.now();
+    let end = 0;
+    let root = new RouterComponent();
     ObserveComponent.mount(
         document.body,
         root
     );
+
     setTimeout(()=>{
-        $state.set({"count" : 10});
+        $state.set({"count" : 10000});
         end = performance.now();
         console.log(end-start);
     },
