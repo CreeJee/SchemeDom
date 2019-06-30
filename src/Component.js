@@ -1,3 +1,4 @@
+// Add Lifecycle beforeCreate
 import {FixedType} from './FixedType.js';
 
 const isElementOrComponent = (v)=>(
@@ -19,6 +20,7 @@ const componentToDom = (o,mountZone) => {
 const clearDom = (mountDom)=>mountDom.innerHTML = "";
 const renderDom = (mountDom,el)=>{
     let isComponent = el instanceof BaseComponent;
+    //TODO : Add documentFragment
     if(isComponent){
         el.$zone = mountDom;
         el.$ref = componentToDom(el,mountDom);
@@ -26,32 +28,36 @@ const renderDom = (mountDom,el)=>{
     mountDom.appendChild(isComponent ? el.$ref : el);
 }
 const elementGenerator = (tag, attributes, ...children) => {
-    const isBaseCond = attributes instanceof Object && children.every(isElementOrComponent);
-    if (typeof tag === 'string' && isBaseCond) {
-        const el = document.createElement(tag);
-        const {text,...attr} = attributes;
-        const entryAttr = Object.entries(attr);
-        if(text !== undefined){
-            el.textContent = text;
+    const isBaseCond =tag !== null && tag !== undefined && attributes instanceof Object && children.every(isElementOrComponent);
+    if (isBaseCond){
+        switch(tag.constructor){
+            case String : 
+                tag = document.createElement(tag);
+            case [tag instanceof HTMLElement] :
+                const {text,...attr} = attributes;
+                const entryAttr = Object.entries(attr);
+                if(text !== undefined){
+                    tag.textContent = text;
+                }
+                for (let index = 0; index < entryAttr.length; index++) {
+                    const [k,v] = entryAttr[index];
+                    tag.setAttribute(k,v);
+                }
+            case DocumentFragment :
+                for (let index = 0; index < children.length; index++) {
+                    renderDom(tag,children[index]);
+                }
+                break;
         }
-        for (let index = 0; index < entryAttr.length; index++) {
-            const [k,v] = entryAttr[index];
-            el.setAttribute(k,v);
+        if(tag instanceof BaseComponent){
+            tag.$props = attributes;
+            tag.$slots = children;
+            tag = componentToDom(tag);
         }
-        for (let index = 0; index < children.length; index++) {
-            renderDom(el,children[index]);
-        }
-        return el;
-    } else if(tag instanceof BaseComponent && isBaseCond) {
-        tag.$props = attributes;
-        tag.$slots = children;
-        return componentToDom(tag);
-        if(children.every(v=>v instanceof BaseComponent)){
-            debugger;
-        }
+        return tag;
     } else {
         throw new Error(
-            'arguments must [[String|BaseComponent],Object,...[HTMLElement|BaseComponent]'
+            'arguments must [[String|HTMLElement|BaseComponent],Object,...[HTMLElement|BaseComponent]'
         );
     }
 };
