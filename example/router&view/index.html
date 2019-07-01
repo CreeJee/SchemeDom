@@ -15,6 +15,10 @@
         import { ObserveComponent } from "../../src/ObserveComponent.js";
 
         const router = new RouterComponent("/user");
+        setTimeout(()=>{
+            $state.set({path : "/user"});
+            console.log()
+        },0)
         Component.mount(document.body,router);
     </script>
 </body>

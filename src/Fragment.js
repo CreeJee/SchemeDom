@@ -1,6 +1,6 @@
 export const Fragment = (...child)=>{
     const parent = document.createDocumentFragment();
-    parent.appendChild(...child);
+    child.forEach((n) => parent.append(n));
     return parent;
-}
+};
 export default Fragment;

@@ -1,35 +1,45 @@
-import { Component } from "../../src/Component.js";
-import { State } from "../../src/State.js";
-import { ObserveComponent } from "../../src/ObserveComponent.js";
+import {State} from '../../src/State.js';
+import {ObserveComponent} from '../../src/ObserveComponent.js';
+import Component from '../../src/Component.js';
 
-export const $state = new State({path : "/"});
-export class RouterComponent extends ObserveComponent{
-    constructor(path){
-        if(!path){
-            throw new TypeError("path is must string")
+export const $state = new State({path: '/'});
+/**
+ * Router Class
+ */
+export class RouterComponent extends ObserveComponent {
+    /**
+     * default route path
+     * @param {String} path
+     */
+    constructor(path) {
+        if (!path) {
+            throw new TypeError('path is must string');
         }
-        setTimeout($state.set.bind($state,{path}),0)
+        setTimeout($state.set.bind($state, {path}), 0);
         super($state);
     }
-    isUpdated(){
-        // if router was changed or other issue
-        return super.isUpdated();
-    }
-    render(u,props,...children){
-        return u("span",{text : 404},...children);
+    /**
+     * @param {Function} u Component.elementGenerator
+     * @param {Object} props
+     * @param  {...Any} children
+     * @return {HTMLElement}
+     */
+    render(u, {$currentView, ...props}, ...children) {
+        return ($currentView instanceof Component) ?
+            $currentView.render(u, props, ...children) :
+            u('span', {text: 404}, ...children);
     }
     /**
-     * 
-     * @param {String} path 
+     * @param {Object} props
      */
     async deliveredProps(props) {
-        let path = this.$state.get("path");
-        if(typeof path !== "string" || path[0] !== "/"){
-           throw new Error("path contains root path"); 
+        let path = this.$state.get('path');
+        if (typeof path !== 'string' || path[0] !== '/') {
+            throw new Error('path contains root path');
+        } else if (path === undefined) {
+            path = '/index';
         }
-        else if(path === undefined){
-            path = "/index";
-        }
-        return {$currentView : await import(`./views${path}.js`)}
+        const ViewConstruct = (await import(`./views${path}.js`)).default;
+        return {$currentView: new ViewConstruct()};
     }
 }

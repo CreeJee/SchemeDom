@@ -13,8 +13,9 @@
     import { Component } from "../src/Component.js";
     import { State } from "../src/State.js";
     import { ObserveComponent } from "../src/ObserveComponent.js";
-    const $state = new State({"count":1});
+    const $state = new State({"count":10000});
 
+    let start = performance.now();
     class MutationComponent extends Component{
         render(u,{text},...children){
             return u("li",{},...children)
@@ -41,20 +42,12 @@
             return new RootComponent($state);
         }
     }
-    let start = performance.now();
     let end = 0;
     let root = new RouterComponent();
     ObserveComponent.mount(
         document.body,
         root
     );
-
-    setTimeout(()=>{
-        $state.set({"count" : 10000});
-        end = performance.now();
-        console.log(end-start);
-    },
-    0)
     end = performance.now();
     console.log(end-start);
 </script>
