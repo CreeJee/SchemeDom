@@ -13,7 +13,8 @@
     import { Component } from "../src/Component.js";
     import { State } from "../src/State.js";
     import { ObserveComponent } from "../src/ObserveComponent.js";
-    const $state = new State({"count":10000});
+    import fragment from "../src/Fragment.js";
+    const $state = new State({"count":20000});
 
     let start = performance.now();
     class MutationComponent extends Component{
@@ -28,12 +29,14 @@
         render(u){
             const count = this.$state.get("count");
             const renderArray = Array.from({length:count},(v)=>"");
+            const childComp = new MutationComponent();
             return u("ul",{},
                 ...renderArray.map((_,i)=>(
-                    u(new MutationComponent(),{},
-                        u("p",{text : i})
-                    )
-                ))
+                        u(childComp,{},
+                            u("p",{text : i})
+                        )
+                    ))
+                
             )
         }
     }

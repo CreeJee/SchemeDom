@@ -3,18 +3,30 @@ import {FixedType} from './FixedType.js';
 
 const isElementOrComponent = (v)=>(
     v instanceof HTMLElement ||
-    v instanceof BaseComponent
+    v instanceof BaseComponent ||
+    v instanceof DocumentFragment
 );
 export const componentToDom = (o, mountZone) => {
-    const el = o.render(
-        elementGenerator.bind(o),
-        o.$props,
-        ...o.$slots
-    );
-    if (mountZone instanceof HTMLElement) {
+    let el = null;
+    if (mountZone instanceof BaseComponent) {
         o.$zone = mountZone;
     }
-    o.$ref = el instanceof BaseComponent ? componentToDom(el, mountZone) : el;
+    if (o.$ref === null) {
+        el = o.render(
+            elementGenerator,
+            o.$props,
+            ...o.$slots
+        );
+    } else {
+        el = elementGenerator(
+            o.$ref.cloneNode(false),
+            o.$props,
+            ...o.$slots
+        );
+    }
+    o.$ref = el instanceof BaseComponent ?
+        componentToDom(el, mountZone) :
+        el;
     return o.$ref;
 };
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
@@ -41,6 +53,7 @@ export const elementGenerator = (tag, attributes, ...children) => {
         if (tag instanceof HTMLElement) {
             const {text, ...attr} = attributes;
             const entryAttr = Object.entries(attr);
+            const fragmentRoot = document.createDocumentFragment();
             if (text !== undefined) {
                 tag.textContent = text;
             }
@@ -49,8 +62,9 @@ export const elementGenerator = (tag, attributes, ...children) => {
                 tag.setAttribute(k, v);
             }
             for (let index = 0; index < children.length; index++) {
-                renderDom(tag, children[index]);
+                renderDom(fragmentRoot, children[index]);
             }
+            tag.appendChild(fragmentRoot);
         }
         if (tag instanceof BaseComponent) {
             tag.$props = attributes;
