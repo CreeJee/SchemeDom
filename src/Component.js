@@ -1,11 +1,11 @@
 // Add Lifecycle beforeCreate
 import {FixedType} from './FixedType.js';
-const elementOrDoc = (v)=>(
+const elementOrFragment = (v)=>(
     v instanceof HTMLElement ||
     v instanceof DocumentFragment
 );
 const childCond = (v)=>(
-    v instanceof BaseComponent || elementOrDoc(v)
+    v instanceof BaseComponent || elementOrFragment(v)
 );
 export const componentToDom = (o, mountZone) => {
     const el = o.render(
@@ -13,7 +13,7 @@ export const componentToDom = (o, mountZone) => {
         o.$props,
         ...o.$slots
     );
-    if (elementOrDoc(mountZone)) {
+    if (elementOrFragment(mountZone)) {
         o.$zone = mountZone;
     }
     o.$ref = el instanceof BaseComponent ? componentToDom(el, mountZone) : el;
@@ -37,7 +37,7 @@ export const renderDom = (mountDom, el, index = 0)=>{
         appendDom = el;
     }
     if (!hasNthChild || selectedChild !== appendDom) {
-        if (elementOrDoc(selectedChild)) {
+        if (elementOrFragment(selectedChild)) {
             if (
                 isComponent &&
                 $prevRef instanceof DocumentFragment &&
