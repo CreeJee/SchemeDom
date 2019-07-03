@@ -1,5 +1,4 @@
-import Component from '../../../src/Component.js';
-import fragment from '../../../src/Fragment.js';
+import {Component, fragment} from '../../../src/Component.js';
 /**
  * User page Component
  */

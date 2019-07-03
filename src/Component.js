@@ -1,59 +1,95 @@
 // Add Lifecycle beforeCreate
 import {FixedType} from './FixedType.js';
-
-const isElementOrComponent = (v)=>(
+const elementOrDoc = (v)=>(
     v instanceof HTMLElement ||
-    v instanceof BaseComponent ||
     v instanceof DocumentFragment
 );
+const childCond = (v)=>(
+    v instanceof BaseComponent || elementOrDoc(v)
+);
 export const componentToDom = (o, mountZone) => {
-    let el = null;
-    if (mountZone instanceof BaseComponent) {
+    const el = o.render(
+        elementGenerator.bind(o),
+        o.$props,
+        ...o.$slots
+    );
+    if (elementOrDoc(mountZone)) {
         o.$zone = mountZone;
     }
-    if (o.$ref === null) {
-        el = o.render(
-            elementGenerator,
-            o.$props,
-            ...o.$slots
-        );
-    } else {
-        el = elementGenerator(
-            o.$ref.cloneNode(false),
-            o.$props,
-            ...o.$slots
-        );
-    }
-    o.$ref = el instanceof BaseComponent ?
-        componentToDom(el, mountZone) :
-        el;
+    o.$ref = el instanceof BaseComponent ? componentToDom(el, mountZone) : el;
     return o.$ref;
 };
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
-export const renderDom = (mountDom, el)=>{
+export const renderDom = (mountDom, el, index = 0)=>{
     const isComponent = el instanceof BaseComponent;
+    const selectedChild = mountDom.children[index];
+    const hasNthChild = selectedChild instanceof HTMLElement;
+
+    let appendDom = null;
+    let $prevRef = null;
     // TODO : Add documentFragment
     if (isComponent) {
         el.$zone = mountDom;
+        $prevRef = el.$ref;
         el.$ref = componentToDom(el, mountDom);
+        appendDom = el.$ref;
+    } else {
+        appendDom = el;
     }
-    mountDom.appendChild(isComponent ? el.$ref : el);
+    if (!hasNthChild || selectedChild !== appendDom) {
+        if (elementOrDoc(selectedChild)) {
+            if (
+                isComponent &&
+                $prevRef instanceof DocumentFragment &&
+                appendDom instanceof DocumentFragment
+            ) {
+                const childCount = appendDom.childElementCount;
+                let igonredTagCount = 0;
+                for (let i = 0; i < childCount; i++) {
+                    const newTag = appendDom.children[igonredTagCount];
+                    const oldTag = mountDom.children[i];
+                    if (newTag.innerHTML !== oldTag.innerHTML) {
+                        mountDom.insertBefore(newTag, oldTag);
+                        oldTag.remove();
+                    } else {
+                        igonredTagCount++;
+                    }
+                }
+            } else {
+                mountDom.insertBefore(appendDom, selectedChild);
+                selectedChild.remove();
+            }
+        } else {
+            mountDom.appendChild(appendDom);
+        }
+    }
+};
+export const fragment = (...child)=>{
+    const o = document.createDocumentFragment();
+    for (let index = 0; index < child.length; index++) {
+        o.appendChild(child[index]);
+    }
+    return o;
 };
 export const elementGenerator = (tag, attributes, ...children) => {
     const isBaseCond = (
         tag !== null &&
         tag !== undefined &&
         attributes instanceof Object &&
-        children.every(isElementOrComponent)
+        children.every(childCond)
     );
+    const isTagName = typeof tag === 'string';
+    let isDOM = tag instanceof HTMLElement;
+    const isFragment = tag instanceof DocumentFragment;
+    const isComponent = tag instanceof BaseComponent;
     if (isBaseCond) {
-        if (typeof tag === 'string') {
+        if (isTagName) {
             tag = document.createElement(tag);
+            isDOM = true;
         }
-        if (tag instanceof HTMLElement) {
+        if (isDOM) {
             const {text, ...attr} = attributes;
             const entryAttr = Object.entries(attr);
-            const fragmentRoot = document.createDocumentFragment();
             if (text !== undefined) {
                 tag.textContent = text;
             }
@@ -61,12 +97,13 @@ export const elementGenerator = (tag, attributes, ...children) => {
                 const [k, v] = entryAttr[index];
                 tag.setAttribute(k, v);
             }
-            for (let index = 0; index < children.length; index++) {
-                renderDom(fragmentRoot, children[index]);
-            }
-            tag.appendChild(fragmentRoot);
         }
-        if (tag instanceof BaseComponent) {
+        if (isFragment || isDOM) {
+            for (let index = 0; index < children.length; index++) {
+                renderDom(tag, children[index], index);
+            }
+        }
+        if (isComponent) {
             tag.$props = attributes;
             tag.$slots = children;
             tag = componentToDom(tag);
@@ -117,7 +154,7 @@ const BaseComponent = class baseComponent {
      * @return {Element}
      */
     mutation(props, slots) {
-        clearDom(this.$zone);
+        // clearDom(this.$zone);
         this.$props = props;
         this.$slots = slots;
         return renderDom(this.$zone, this);

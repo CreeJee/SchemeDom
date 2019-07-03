@@ -10,11 +10,10 @@
     
 </body>
 <script type="module">
-    import { Component } from "../src/Component.js";
+    import { Component, fragment } from "../src/Component.js";
     import { State } from "../src/State.js";
     import { ObserveComponent } from "../src/ObserveComponent.js";
-    import fragment from "../src/Fragment.js";
-    const $state = new State({"count":20000});
+    const $state = new State({"count":10000});
 
     let start = performance.now();
     class MutationComponent extends Component{
@@ -31,11 +30,11 @@
             const renderArray = Array.from({length:count},(v)=>"");
             const childComp = new MutationComponent();
             return u("ul",{},
-                ...renderArray.map((_,i)=>(
-                        u(childComp,{},
-                            u("p",{text : i})
-                        )
+                fragment(
+                    ...renderArray.map((_,i)=>(
+                        u("li",{text : i},)
                     ))
+                )
                 
             )
         }
