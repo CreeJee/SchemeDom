@@ -6,12 +6,15 @@ import FixedType from './FixedType.js';
  */
 class ObserveComponent extends Component {
     /**
-     * @param {State} state
+     * @param {State} $state
      */
-    constructor(state) {
+    constructor($state) {
         super({});
-        this.$state = state;
-        state.observe(this._updated.bind(this));
+        if (!($state instanceof State)) {
+            throw new Error('need initalized State');
+        }
+        this.$state = $state;
+        $state.observe(this._updated.bind(this));
     }
     /**
      * when needs mutation check
@@ -35,13 +38,13 @@ class ObserveComponent extends Component {
     _updated(props) {
         const slots = this.$slots;
         if (this.isUpdated(props)) {
-            setTimeout(async ()=>{
+            window.setTimeout(async ()=>{
                 const result = await this.deliveredProps(props);
                 if (typeof result === 'object' && result !== null) {
                     props = result;
                 }
                 this.mutation(props, slots);
-            }, 0);
+            });
         }
     }
 }

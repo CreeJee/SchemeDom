@@ -27,7 +27,6 @@ export const renderDom = (mountDom, el, index = 0)=>{
 
     let appendDom = null;
     let $prevRef = null;
-    // TODO : Add documentFragment
     if (isComponent) {
         el.$zone = mountDom;
         $prevRef = el.$ref;
@@ -48,7 +47,8 @@ export const renderDom = (mountDom, el, index = 0)=>{
                 for (let i = 0; i < childCount; i++) {
                     const newTag = appendDom.children[igonredTagCount];
                     const oldTag = mountDom.children[i];
-                    if (newTag.innerHTML !== oldTag.innerHTML) {
+                    // 틀수조건에 대한 optimize
+                    if (newTag.outerHTML !== oldTag.outerHTML) {
                         mountDom.insertBefore(newTag, oldTag);
                         oldTag.remove();
                     } else {

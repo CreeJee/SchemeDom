@@ -15,7 +15,7 @@ export class RouterComponent extends ObserveComponent {
         if (!path) {
             throw new TypeError('path is must string');
         }
-        setTimeout($state.set.bind($state, {path}), 0);
+        window.setTimeout($state.set.bind($state, {path}));
         super($state);
     }
     /**
@@ -33,7 +33,7 @@ export class RouterComponent extends ObserveComponent {
      * @param {Object} props
      */
     async deliveredProps(props) {
-        let path = this.$state.get('path');
+        let path = this.$state.path;
         if (typeof path !== 'string' || path[0] !== '/') {
             throw new Error('path contains root path');
         } else if (path === undefined) {

@@ -3,6 +3,19 @@ const reflectState = new Map();
 const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
 
+const stateProxyHandler = {
+    get: (o, prop, receiver)=>{
+        return (
+            Reflect.has(o, prop) ?
+                Reflect.get(o, prop, receiver) :
+                o[_baseStateSymbol].get(prop)
+        );
+    },
+    apply: (target, thisArg, ...args)=>{
+        return Reflect.apply(target, thisArg, ...args);
+    }
+};
+
 /**
  * State
  */
@@ -19,48 +32,16 @@ class State {
         return reflectState.get(key);
     }
     /**
-     * @decorator
-     * @static
-     * @param {String} action
-     * @param {Object} target
-     * @param {Any} name
-     * @param {Object} descriptor
-     * @return {Any} invoked Action
-     */
-    static decorator(action, target, name, descriptor) {
-        return this[action].bind(this, action);
-    }
-    /**
-     * inject Reference
-     * @param {State} ref
-     */
-    static inject(ref) {
-    }
-    /**
      * @memberof State
      * @param {FixedTypeArray<FixedTypeArray<Any,Any>>} initState
      * @param {Any} key
      */
-    constructor(initState, key = this) {
+    constructor(initState = {}, key = this) {
         this[_baseStateSymbol] = new Map(Object.entries(initState));
         this[_eventHandlersSymbol] = [];
         this.history = [this[_baseStateSymbol]];
         reflectState.set(key, this);
-    }
-    /**
-     * @memberof State
-     * @description state clearedValue
-     * @param {Any} key
-     * @param {Any} value
-     * @memberof State
-     * @return {Any} value
-     */
-    init(key, value = new State()) {
-        const hasValue = this[_baseStateSymbol].has(key);
-        if (!hasValue) {
-            this.set(key, value);
-        }
-        return (hasValue ? this.get(key) : value);
+        return new Proxy(this, stateProxyHandler);
     }
     /**
      * @memberof State
@@ -74,14 +55,6 @@ class State {
             observer(value);
         }
         return value;
-    }
-    /**
-     * @param {Any} k
-     * @param {Any} v
-     * @return {Any}
-     */
-    get(k, v) {
-        return this[_baseStateSymbol].get(k);
     }
     /**
      * @param {Function} observer
@@ -106,9 +79,7 @@ const ProxyConstructor = FixedType.expect(
     FixedType.array(FixedType.array(FixedType.any)),
     FixedType.any
 );
-const bind = State.observe;
 export default ProxyConstructor;
 export {
     ProxyConstructor as State,
-    bind,
 };

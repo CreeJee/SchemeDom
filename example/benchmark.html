@@ -26,7 +26,7 @@
             super($state);
         }
         render(u){
-            const count = this.$state.get("count");
+            const count = this.$state.count;
             const renderArray = Array.from({length:count},(v)=>"");
             const childComp = new MutationComponent();
             return u("ul",{},
