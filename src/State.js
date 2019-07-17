@@ -4,16 +4,12 @@ const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
 
 const stateProxyHandler = {
-    get: (o, prop, receiver)=>{
-        return (
-            Reflect.has(o, prop) ?
-                Reflect.get(o, prop, receiver) :
-                o[_baseStateSymbol].get(prop)
-        );
-    },
-    apply: (target, thisArg, ...args)=>{
-        return Reflect.apply(target, thisArg, ...args);
-    }
+    get: (o, prop, receiver)=>(
+        Reflect.has(o, prop) ?
+            Reflect.get(o, prop, receiver) :
+            o[_baseStateSymbol].get(prop)
+    ),
+    apply: Reflect.apply,
 };
 
 /**
@@ -48,13 +44,16 @@ class State {
      * @param {Any} value
      * @return {Any} returns value`
      */
-    set(value) {
-        this[_baseStateSymbol] = new Map(Object.entries(value));
-        this.history.push(this[_baseStateSymbol]);
+    async set(value) {
+        this.forceSet(value);
         for (const observer of this[_eventHandlersSymbol]) {
-            observer(value);
+            await observer(value);
         }
         return value;
+    }
+    forceSet(value){
+        this[_baseStateSymbol] = new Map(Object.entries(value));
+        this.history.push(this[_baseStateSymbol]);
     }
     /**
      * @param {Function} observer
@@ -69,7 +68,7 @@ class State {
      * @description rollback State
      * @return {Promise<State>};
      */
-    async revert() {
+    revert() {
         [this[_baseStateSymbol]] = this.history.splice(-1, 1);
         return this;
     }

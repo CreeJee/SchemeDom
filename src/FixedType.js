@@ -443,12 +443,11 @@ class FixedType {
                 (relativeParent, v) => v.action(relativeParent, Type, obj),
                 parent
             );
-            // TODO middleware 순서 밀리는거 해결
             lastIndex = types.indexOf(reduced);
         }
         return reduced instanceof Object
             ? reduced
-            : (types.length-1 === types[lastIndex+1]);
+            : (types.length-1 === lastIndex+1);
     }
 
     /**

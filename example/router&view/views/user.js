@@ -1,4 +1,5 @@
-import {Component, fragment} from '../../../src/Component.js';
+import {fragment} from "../../../src/core/VNode.js";
+import {Component} from '../../../src/Component.js';
 /**
  * User page Component
  */

@@ -35,16 +35,13 @@ class ObserveComponent extends Component {
      * @private
      * @param {Object} props
      */
-    _updated(props) {
+    async _updated(props) {
         const slots = this.$slots;
         if (this.isUpdated(props)) {
-            window.setTimeout(async ()=>{
-                const result = await this.deliveredProps(props);
-                if (typeof result === 'object' && result !== null) {
-                    props = result;
-                }
-                this.mutation(props, slots);
-            });
+            this.mutation(
+                await this.deliveredProps(props),
+                slots
+            );
         }
     }
 }

@@ -50,7 +50,7 @@ class ChildrenMock extends Component {
 /**
  * test 4
  */
-class observeChildMock extends ObserveComponent {
+class ObserveChildMock extends ObserveComponent {
     /**
      * @param {State} $state
      */
@@ -63,7 +63,13 @@ class observeChildMock extends ObserveComponent {
      * @return {HTMLElement|DocumentFragment}
      */
     render(u) {
-        return u('span', {text: this.$state.text});
+        const childState = this.$state.list;
+        if (!Array.isArray(childState)) {
+            throw new Error('need $state.list');
+        }
+        return u('ul', {},
+            ...childState.map((i)=>u('li', {text: i}))
+        );
     }
 }
 const $mockState = new State();
@@ -90,4 +96,28 @@ test('children render', ()=>{
     Component.mount(document.body, o);
     expect(document.body.innerHTML).toEqual('<ul><li></li></ul>');
     document.body.innerHTML = '';
+});
+
+test('nested child observe render', (done) => {
+    const o = new ObserveChildMock($mockState);
+    $mockState.set({list: [1, 2, 3, 4]});
+    Component.mount(document.body, o);
+    setTimeout(()=>{
+        expect(document.body.innerHTML)
+            .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
+        document.body.innerHTML = '';
+        done();
+    }, 1000);
+});
+test('nested child observe double render', (done) => {
+    const o = new ObserveChildMock($mockState);
+    $mockState.set({list: [1, 2, 3, 4]});
+    Component.mount(document.body, o);
+    $mockState.set({list: [1, 2]});
+    setTimeout(()=>{
+        expect(document.body.innerHTML)
+            .toEqual('<ul><li>1</li><li>2</li></ul>');
+        document.body.innerHTML = '';
+        done();
+    }, 1000);
 });

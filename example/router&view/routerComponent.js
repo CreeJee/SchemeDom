@@ -15,7 +15,7 @@ export class RouterComponent extends ObserveComponent {
         if (!path) {
             throw new TypeError('path is must string');
         }
-        window.setTimeout($state.set.bind($state, {path}));
+        window.requestIdleCallback($state.set.bind($state,{path}));
         super($state);
     }
     /**
@@ -40,6 +40,6 @@ export class RouterComponent extends ObserveComponent {
             path = '/index';
         }
         const ViewConstruct = (await import(`./views${path}.js`)).default;
-        return {$currentView: new ViewConstruct()};
+        return {$currentView: new ViewConstruct(props)};
     }
 }

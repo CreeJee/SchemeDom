@@ -7,50 +7,51 @@
     <title>TEST</title>
 </head>
 <body>
+    <div id="app"></div>
+    <script type="module">
+        import { fragment } from "../src/core/VNode.js"
+        import { Component } from "../src/Component.js";
+        import { State } from "../src/State.js";
+        import { ObserveComponent } from "../src/ObserveComponent.js";
+        const $state = new State({"count":10000});
     
-</body>
-<script type="module">
-    import { Component, fragment } from "../src/Component.js";
-    import { State } from "../src/State.js";
-    import { ObserveComponent } from "../src/ObserveComponent.js";
-    const $state = new State({"count":10000});
-
-    let start = performance.now();
-    class MutationComponent extends Component{
-        render(u,{text},...children){
-            return u("li",{},...children)
+        let start = performance.now();
+        class MutationComponent extends Component{
+            render(u,{text},...children){
+                return u("li",{},...children)
+            }
         }
-    }
-    class RootComponent extends ObserveComponent{
-        constructor($state){
-            super($state);
-        }
-        render(u){
-            const count = this.$state.count;
-            const renderArray = Array.from({length:count},(v)=>"");
-            const childComp = new MutationComponent();
-            return u("ul",{},
-                fragment(
-                    ...renderArray.map((_,i)=>(
-                        u("li",{text : i},)
-                    ))
+        class RootComponent extends ObserveComponent{
+            constructor($state){
+                super($state);
+            }
+            render(u){
+                const count = this.$state.count;
+                const renderArray = Array.from({length:count},(v)=>"");
+                const childComp = new MutationComponent();
+                return u("ul",{},
+                    fragment(
+                        ...renderArray.map((_,i)=>(
+                            u("li",{text : i},)
+                        ))
+                    )
+                    
                 )
-                
-            )
+            }
         }
-    }
-    class RouterComponent extends Component{
-        render(u){
-            return new RootComponent($state);
+        class RouterComponent extends Component{
+            render(u){
+                return u(new RootComponent($state));
+            }
         }
-    }
-    let end = 0;
-    let root = new RouterComponent();
-    ObserveComponent.mount(
-        document.body,
-        root
-    );
-    end = performance.now();
-    console.log(end-start);
-</script>
+        let end = 0;
+        let root = new RouterComponent();
+        ObserveComponent.mount(
+            document.querySelector("#app"),
+            root
+        );
+        end = performance.now();
+        console.log(end-start);
+    </script>
+</body>
 </html>
