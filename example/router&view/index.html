@@ -13,11 +13,12 @@
         import { Component } from "../../src/Component.js";
         import { State } from "../../src/State.js";
         import { ObserveComponent } from "../../src/ObserveComponent.js";
-
-        const router = new RouterComponent("/user");
+        window.start = performance.now();
+        window.router = new RouterComponent("/user");
         Component.mount(document.getElementById("router"),router);
         // async
         $state.set({path : "/info"});
+        window.end = performance.now();
     </script>
 </body>
 </html>

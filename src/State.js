@@ -1,4 +1,4 @@
-import {FixedType} from './FixedType.js';
+import {FixedType} from './core/FixedType.js';
 const reflectState = new Map();
 const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');

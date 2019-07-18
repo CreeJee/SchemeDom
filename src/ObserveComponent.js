@@ -1,6 +1,6 @@
 import Component from './Component.js';
 import {State} from './State.js';
-import FixedType from './FixedType.js';
+import FixedType from './core/FixedType.js';
 /**
  * ObserveComponent
  */

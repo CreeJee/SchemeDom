@@ -15,7 +15,8 @@
         import { ObserveComponent } from "../src/ObserveComponent.js";
         const $state = new State({"count":10000});
     
-        let start = performance.now();
+        window.start = performance.now();
+        window.end = 0;
         class MutationComponent extends Component{
             render(u,{text},...children){
                 return u("li",{},...children)
@@ -44,14 +45,13 @@
                 return u(new RootComponent($state));
             }
         }
-        let end = 0;
         let root = new RouterComponent();
         ObserveComponent.mount(
             document.querySelector("#app"),
             root
         );
-        end = performance.now();
-        console.log(end-start);
+        window.end = performance.now();
+        console.log(window.end-window.start);
     </script>
 </body>
 </html>

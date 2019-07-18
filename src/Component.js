@@ -1,16 +1,16 @@
 // Add Lifecycle beforeCreate
-import {FixedType} from './FixedType.js';
+import {FixedType} from './core/FixedType.js';
 import {BaseComponent} from './core/BaseComponent.js'
 import {VNode} from './core/VNode.js'
 
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
 export const renderDom = (mountDom,component)=>{
-    const vnode = component.render(
+    component.$vNode = component.render(
         VNode.create,
         component.$props,
         component.$slots
     );
-    mountDom.appendChild(vnode.render(mountDom));
+    mountDom.appendChild(component.$vNode.render(mountDom));
 }
 
 /**
@@ -32,6 +32,8 @@ class Component extends BaseComponent {
     static async mount(mountDom, component) {
         // render ref logic
         component.$zone = mountDom;
+        // 효과적인 dom튜닝방법을 찾을것
+        clearDom(mountDom);
         renderDom(mountDom, component);
         return this;
     }
@@ -44,7 +46,7 @@ class Component extends BaseComponent {
     mutation(props, slots) {
         this.$props = props;
         this.$slots = slots;
-        renderDom(this.$zone, this);
+        Component.mount(this.$zone,this);
         return this;
     }
 }
