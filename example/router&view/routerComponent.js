@@ -15,7 +15,7 @@ export class RouterComponent extends ObserveComponent {
         if (!path) {
             throw new TypeError('path is must string');
         }
-        window.requestIdleCallback($state.set.bind($state,{path}));
+        window.requestAnimationFrame($state.set.bind($state,{path}));
         super($state);
     }
     /**

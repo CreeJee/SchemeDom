@@ -1,0 +1,3 @@
+[submodule "lib/hyperscript"]
+	path = lib/hyperscript
+	url = https://github.com/hyperhype/hyperscript

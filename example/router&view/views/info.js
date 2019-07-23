@@ -1,4 +1,4 @@
-import {fragment} from "../../../src/core/VNode.js";
+
 import {Component} from '../../../src/Component.js';
 /**
  * User page Component
@@ -9,7 +9,7 @@ export default class User extends Component {
      * @return {HTMLElement|DocumentFragment}
      */
     render(u) {
-        return fragment(
+        return Component.fragment(
             u('nav', {},
                 u('ul', {},
                     u('li', {},

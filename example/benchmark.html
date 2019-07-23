@@ -9,7 +9,6 @@
 <body>
     <div id="app"></div>
     <script type="module">
-        import { fragment } from "../src/core/VNode.js"
         import { Component } from "../src/Component.js";
         import { State } from "../src/State.js";
         import { ObserveComponent } from "../src/ObserveComponent.js";
@@ -31,7 +30,7 @@
                 const renderArray = Array.from({length:count},(v)=>"");
                 const childComp = new MutationComponent();
                 return u("ul",{},
-                    fragment(
+                    Component.fragment(
                         ...renderArray.map((_,i)=>(
                             u("li",{text : i},)
                         ))

@@ -1,14 +1,14 @@
 // Add Lifecycle beforeCreate
 import {FixedType} from './core/FixedType.js';
 import {BaseComponent} from './core/BaseComponent.js'
-import {VNode} from './core/VNode.js'
+import {VNode,fragment} from './core/VNode.js'
 
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
 export const renderDom = (mountDom,component)=>{
     component.$vNode = component.render(
         VNode.create,
         component.$props,
-        component.$slots
+        ...component.$slots
     );
     mountDom.appendChild(component.$vNode.render(mountDom));
 }
@@ -36,6 +36,13 @@ class Component extends BaseComponent {
         clearDom(mountDom);
         renderDom(mountDom, component);
         return this;
+    }
+    /**
+     * fragment generator
+     * @param  {...VNode} child 
+     */
+    static fragment(...child){
+        return fragment(...child);
     }
     /**
      * @description if mutation is not defined just re render
