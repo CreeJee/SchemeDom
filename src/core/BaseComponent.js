@@ -20,3 +20,4 @@ export const BaseComponent = class baseComponent {
         throw new Error(`"need implements ${this.constructor.name}.action`);
     }
 };
+

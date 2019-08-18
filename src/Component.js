@@ -1,17 +1,28 @@
 // Add Lifecycle beforeCreate
 import {FixedType} from './core/FixedType.js';
-import {BaseComponent} from './core/BaseComponent.js'
-import {VNode,fragment} from './core/VNode.js'
-
-export const clearDom = (mountDom)=>mountDom.innerHTML = '';
-export const renderDom = (mountDom,component)=>{
-    component.$vNode = component.render(
-        VNode.create,
+import {BaseComponent} from './core/BaseComponent.js';
+import {
+    Element as VNodeElement,
+    Fragment,
+    generate,
+} from './core/VNode.js';
+const bindVNode = (component) => (
+    component.render(
+        componentOrElement,
         component.$props,
         ...component.$slots
-    );
-    mountDom.appendChild(component.$vNode.render(mountDom));
-}
+    )
+);
+const componentOrElement = (arg1, ...args)=>(
+    arg1 instanceof BaseComponent ?
+        bindVNode(arg1) :
+        VNodeElement.create(arg1, ...args)
+);
+export const clearDom = (mountDom)=>mountDom.innerHTML = '';
+export const renderDom = (mountDom, component)=>{
+    component.$vNode = bindVNode(component);
+    generate(mountDom, component.$vNode);
+};
 
 /**
 * @param {Function} Parent
@@ -39,10 +50,11 @@ class Component extends BaseComponent {
     }
     /**
      * fragment generator
-     * @param  {...VNode} child 
+     * @param  {...VNode} child
+     * @return {VNode.Fragment}
      */
-    static fragment(...child){
-        return fragment(...child);
+    static fragment(...child) {
+        return new Fragment(...child);
     }
     /**
      * @description if mutation is not defined just re render
@@ -53,7 +65,7 @@ class Component extends BaseComponent {
     mutation(props, slots) {
         this.$props = props;
         this.$slots = slots;
-        Component.mount(this.$zone,this);
+        Component.mount(this.$zone, this);
         return this;
     }
 }
@@ -66,5 +78,5 @@ Component.mount = FixedType.expect(
 export default Component;
 export {
     Component,
-    BaseComponent
+    BaseComponent,
 };
