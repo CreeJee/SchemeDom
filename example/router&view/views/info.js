@@ -1,9 +1,9 @@
 
 import {Component} from '../../../src/Component.js';
 /**
- * User page Component
+ * Info page Component
  */
-export default class User extends Component {
+export default class Info extends Component {
     /**
      * @param {Component.elementGenerator} u
      * @return {HTMLElement|DocumentFragment}

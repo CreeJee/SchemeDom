@@ -4,13 +4,13 @@ import {BaseComponent} from './core/BaseComponent.js'
 import {VNode,fragment} from './core/VNode.js'
 
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
-export const renderDom = (mountDom,component)=>{
+export const renderDom = async (mountDom,component)=>{
     component.$vNode = component.render(
         VNode.create,
-        component.$props,
+        component.$props = await component.deliveredProps(component.$props),
         ...component.$slots
     );
-    mountDom.appendChild(component.$vNode.render(mountDom));
+    component.$vNode.render(mountDom)
 }
 
 /**
@@ -34,7 +34,7 @@ class Component extends BaseComponent {
         component.$zone = mountDom;
         // 효과적인 dom튜닝방법을 찾을것
         clearDom(mountDom);
-        renderDom(mountDom, component);
+        await renderDom(mountDom, component);
         return this;
     }
     /**
@@ -50,12 +50,21 @@ class Component extends BaseComponent {
      * @param {Element} slots
      * @return {Element}
      */
-    mutation(props, slots) {
+    async mutation(props, slots) {
         this.$props = props;
         this.$slots = slots;
-        Component.mount(this.$zone,this);
+        await renderDom(this.$zone, this);
         return this;
     }
+    /**
+     * @description use safe mutation props
+     * @param {Object} oldProps
+     * @return {Promise<Object>} delivedProps
+     */
+    async deliveredProps(oldProps) {
+        return {};
+    }
+    
 }
 Component.mount = FixedType.expect(
     Component.mount,
