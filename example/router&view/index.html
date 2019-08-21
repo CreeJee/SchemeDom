@@ -14,7 +14,7 @@
         import { State } from "../../src/State.js";
         import { ObserveComponent } from "../../src/ObserveComponent.js";
         window.start = performance.now();
-        window.router = new RouterComponent("/user");
+        window.router = new RouterComponent();
         Component.mount(document.getElementById("router"),router);
         // async
         $state.set({path : "/info"});

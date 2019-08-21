@@ -86,7 +86,6 @@ test('nested observe render', (done) => {
     $mockState.set({text: 'yellow'});
 
     setTimeout(()=>{
-        console.log(o);
         expect(document.body.innerHTML).toEqual('<span>yellow</span>');
         document.body.innerHTML = '';
         done();

@@ -3,7 +3,7 @@ import {Component} from '../../../src/Component.js';
 /**
  * User page Component
  */
-export default class User extends Component {
+export default class Info extends Component {
     /**
      * @param {Component.elementGenerator} u
      * @return {HTMLElement|DocumentFragment}
@@ -17,7 +17,7 @@ export default class User extends Component {
                     )
                 )
             ),
-            u('h1', {text: 'test'})
+            u('h1', {text: 'info'})
         );
     }
 }

@@ -11,11 +11,7 @@ export class RouterComponent extends ObserveComponent {
      * default route path
      * @param {String} path
      */
-    constructor(path) {
-        if (!path) {
-            throw new TypeError('path is must string');
-        }
-        window.requestAnimationFrame($state.set.bind($state,{path}));
+    constructor() {
         super($state);
     }
     /**
@@ -41,5 +37,23 @@ export class RouterComponent extends ObserveComponent {
         }
         const ViewConstruct = (await import(`./views${path}.js`)).default;
         return {$currentView: new ViewConstruct(props)};
+    }
+    /**
+     * router push
+     *
+     * @param {*} path
+     * @memberof RouterComponent
+     */
+    push(path) {
+        this.$state.set({path});
+    }
+    /**
+     * redirect push
+     *
+     * @param {*} path
+     * @memberof RouterComponent
+     */
+    redirect(path) {
+        this.$state.forceSet({path});
     }
 }

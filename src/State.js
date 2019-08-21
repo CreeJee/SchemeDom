@@ -42,18 +42,23 @@ class State {
     /**
      * @memberof State
      * @param {Any} value
-     * @return {Any} returns value`
+     * @return {Any} returns value
      */
     async set(value) {
         this.forceSet(value);
+        this.history.push(this[_baseStateSymbol]);
         for (const observer of this[_eventHandlersSymbol]) {
             await observer(value);
         }
         return value;
     }
-    forceSet(value){
+    /**
+     * force set value for state
+     * @param {*} value
+     * @memberof State
+     */
+    forceSet(value) {
         this[_baseStateSymbol] = new Map(Object.entries(value));
-        this.history.push(this[_baseStateSymbol]);
     }
     /**
      * @param {Function} observer
