@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://localvoid.github.io/uibench-base/0.1.0/styles.css">
+</head>
+<body>
+    <div id="App"></div>
+    <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
+    <script type="module">
+        import { Component } from "../src/Component.js";
+        import { State } from "../src/State.js";
+        import { ObserveComponent } from "../src/ObserveComponent.js";
+        class TableCellComponent extends Component {
+            constructor(){
+                super();
+            }
+            render(u, { text }, ...children){
+                return u(
+                    "h1", 
+                    {
+                        text: (text ? text: '#text'),
+                        class: 'TableCell' 
+                    },
+                );
+            }
+        }
+        class TableRowComponent extends Component {
+            constructor($parentState){
+                super();
+                this._state = $parentState;
+            }
+            render(u, attr, ...children){
+                return u(
+                    'tr',
+                    {class: 'TableRow'},
+                )
+            }
+        }
+        class TableComponent extends Component {
+            constructor($parentState){
+                super();
+                this._state = $parentState;
+            }
+            render(u, attr, ...children){
+                return u(
+                    'table', 
+                    {class: 'Table'},
+                    u(new TableRowComponent(this._state)),
+                    u(new TableRowComponent(this._state))
+                );
+            }
+        }
+
+
+        class MainComponent extends ObserveComponent {
+            constructor($state){
+                super($state);
+            }
+            render(u, { text }, ...children) {
+                return u(
+                    "div",
+                    { text: '#text', class: 'Main'},
+                    u(new TableComponent(this.$state))
+                )
+            }
+        }
+        
+        uibench.init("SchemeDom", "1.0.0");
+        
+        document.addEventListener("DOMContentLoaded", (e) => {
+            const container = document.querySelector("#App");
+
+            uibench.run(
+                (state) => {
+                    container.textContent = "";
+                    const component = new MainComponent(new State(state));
+                    Component.mount(container, component);
+                },
+                (samples) => {
+                    document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";
+                }
+            );
+        });
+    </script>
+</body>
+</html>

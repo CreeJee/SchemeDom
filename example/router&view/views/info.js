@@ -5,8 +5,8 @@ import {Component} from '../../../src/Component.js';
  */
 export default class Info extends Component {
     /**
-     * @param {Component.elementGenerator} u
-     * @return {HTMLElement|DocumentFragment}
+     * @param {Component.fragment} u
+     * @return {VNode}
      */
     render(u) {
         return Component.fragment(

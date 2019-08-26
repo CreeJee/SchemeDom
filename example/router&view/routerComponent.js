@@ -1,8 +1,9 @@
 import {State} from '../../src/State.js';
 import {ObserveComponent} from '../../src/ObserveComponent.js';
 import Component from '../../src/Component.js';
+// TODO: route match;
+export const $state = new State({path: '/', routes: []});
 
-export const $state = new State({path: '/'});
 /**
  * Router Class
  */
@@ -54,6 +55,6 @@ export class RouterComponent extends ObserveComponent {
      * @memberof RouterComponent
      */
     redirect(path) {
-        this.$state.forceSet({path});
+        this.$state.put({path});
     }
 }

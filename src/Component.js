@@ -6,21 +6,21 @@ import {
     Fragment,
     generate,
 } from './core/VNode.js';
-const bindVNode = (component) => (
+const bindVNode = (component, props, ...childs) => (
     component.render(
         componentOrElement,
-        component.$props,
-        ...component.$slots
+        props,
+        ...childs
     )
 );
-const componentOrElement = (arg1, ...args)=>(
+const componentOrElement = (arg1, props, ...childs)=>(
     arg1 instanceof BaseComponent ?
-        bindVNode(arg1) :
-        VNodeElement.create(arg1, ...args)
+        bindVNode(arg1, props, ...childs) :
+        VNodeElement.create(arg1, props, ...childs)
 );
 export const clearDom = (mountDom)=>mountDom.innerHTML = '';
 export const renderDom = (mountDom, component)=>{
-    component.$vNode = bindVNode(component);
+    component.$vNode = bindVNode(component, {});
     generate(mountDom, component.$vNode);
 };
 
@@ -63,8 +63,6 @@ class Component extends BaseComponent {
      * @return {Element}
      */
     mutation(props, slots) {
-        this.$props = props;
-        this.$slots = slots;
         Component.mount(this.$zone, this);
         return this;
     }

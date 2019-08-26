@@ -5,8 +5,6 @@ export const BaseComponent = class baseComponent {
     constructor({...props} = {}) {
         this.$vNode = null;
         this.$zone = null;
-        this.$props = props;
-        this.$slots = [];
     }
     /**
      * render

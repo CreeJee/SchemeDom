@@ -1,57 +1,91 @@
-import { BaseComponent } from "./BaseComponent.js";
-const DomCache = class DomCache{
-    static get Instance(){
-        return this._instance === undefined ? this._instance = new DomCache() : this._instance;
+const DomCache = class DomCache {
+    /**
+     *
+     * DomCache Instance
+     * @readonly
+     * @static
+     */
+    static get Instance() {
+        return (
+            this._instance === undefined ?
+                this._instance = new DomCache() :
+                this._instance
+        );
     }
-    constructor(){
+    /**
+     *Creates an instance of DomCache.
+     */
+    constructor() {
         this.cacheTable = new Map();
     }
-    get(tagName){
-        if(!this.cacheTable.has(tagName)){
-            this.cacheTable.set(tagName,document.createElement(tagName));
+    /**
+     *
+     *
+     * @param {String} tagName
+     * @return {Element}
+     */
+    get(tagName) {
+        if (!this.cacheTable.has(tagName)) {
+            this.cacheTable.set(tagName, document.createElement(tagName));
         }
-        return this.cacheTable.get(tagName).cloneNode(false)
+        return this.cacheTable.get(tagName).cloneNode(false);
     }
-    
-}
-
-export const domCache = DomCache.Instance;
-export const V_NODE_TEXT = Symbol("$$VNodeText");
-export const V_NODE_ELEMENT = Symbol("$$VNodeElement");
-export const V_NODE_FRAGMENT = Symbol("$$VNodeFragment");
-export const V_NODE_COMPONENT = Symbol("$$VNodeComponent");
-export const V_NODE_UNKNOWN = Symbol("$$VNodeUnknown");
-const defaultMutation = function(parentNode,nth,created){
+};
+const defaultMutation = function(vNode, parentNode, nth, created) {
     const oldNode = parentNode.children[nth];
     const parentRef = parentNode.$ref;
-    const selfRef = this.$ref;
-    if(created){
+    const selfRef = vNode.$ref;
+    if (created) {
         parentRef.appendChild(selfRef);
-    }
-    else if(this.type !== oldNode.type || !this.compare(oldNode,this)){
-        let oldRef = parentRef.childNodes[nth];
-        parentRef.insertBefore(selfRef,oldRef);
+    } else if (vNode.type !== oldNode.type || !vNode.compare(oldNode, vNode)) {
+        const oldRef = parentRef.childNodes[nth];
+        parentRef.insertBefore(selfRef, oldRef);
         oldRef.remove();
     }
-    return this.$ref;
-}
+    return vNode.$ref;
+};
 const _isCreateMode = ($vNode)=>$vNode.$ref === null;
-export function generate(mountZone,$vNode){
+const _isFunction = (v) => typeof v === 'function';
+export const domCache = DomCache.Instance;
+export const V_NODE_TEXT = Symbol('$$VNodeText');
+export const V_NODE_ELEMENT = Symbol('$$VNodeElement');
+export const V_NODE_FRAGMENT = Symbol('$$VNodeFragment');
+export const V_NODE_COMPONENT = Symbol('$$VNodeComponent');
+export const V_NODE_UNKNOWN = Symbol('$$VNodeUnknown');
+
+/**
+ *
+ * @export
+ * @param {Element} mountZone
+ * @param {VNode} $vNode
+ */
+export function generate(mountZone, $vNode) {
     const isCreateMode = _isCreateMode($vNode);
-    if(isCreateMode){
+    if (isCreateMode) {
         $vNode.create(mountZone);
     }
-    for(const [index,$childNode] of $vNode.children.entries()){
-        generate($vNode.$ref,$childNode);
-        //child가 createMode인것이 필요한건지 parent가 createMode인것이 필요한건지 불충분
-        $childNode.mutation($vNode,index,isCreateMode);
+    for (const [index, $childNode] of $vNode.children.entries()) {
+        generate($vNode.$ref, $childNode);
+        // child가 createMode인것이 필요한건지 parent가 createMode인것이 필요한건지 불충분
+        $childNode.mutation($vNode, index, isCreateMode);
     }
-    if($vNode.parent === null){
+    if ($vNode.parent === null) {
         mountZone.appendChild($vNode.$ref);
     }
 }
-export class VNode{
-    constructor({...attributes},...children){
+/**
+ *
+ * @export
+ * @class VNode
+ */
+export class VNode {
+    /**
+     *Creates an instance of VNode.
+     * @param {*} {...attributes}
+     * @param {*} children
+     * @memberof VNode
+     */
+    constructor({...attributes}, ...children) {
         const childLen = children.length;
         this.attributes = attributes;
         this.children = children;
@@ -60,132 +94,267 @@ export class VNode{
         this.prev = null;
         for (let i = 0; i < childLen; i++) {
             children[i].parent = this;
-            if(i > 0){
+            if (i > 0) {
                 children[i].prev = children[i-1];
             }
-            if(i <= childLen-1){
+            if (i <= childLen-1) {
                 children[i].next = children[i+1];
             }
         }
         this.$ref = null;
         // getter와 setter를 이용하여 tree변경시 부분적으로 dom재어
     }
-    create(parent){
-        throw new Error("need implements [create]");
+    /**
+     *
+     * @param {VNode} parent
+     * @throws {String} need implements
+     * @memberof VNode
+     */
+    create(parent) {
+        throw new Error('need implements [create]');
     }
-    compare(old,val){
-        throw new Error("need implements [compare]");
+    /**
+     *
+     * @param {VNode} old
+     * @param {VNode} val
+     * @throws {String} need implements
+     * @memberof VNode
+     */
+    compare(old, val) {
+        throw new Error('need implements [compare]');
     }
-    mutation(parent,nth,created){
-        return defaultMutation.call(this,parent,nth,created);
+    /**
+     *
+     *
+     * @param {VNode} parent
+     * @param {Number} nth
+     * @param {Boolean} created
+     * @return {Element}
+     * @memberof VNode
+     */
+    mutation(parent, nth, created) {
+        return defaultMutation.call(null, this, parent, nth, created);
     }
-    //util
-    get static(){
+    /**
+     *
+     * static util
+     * @readonly
+     * @memberof VNode
+     */
+    get static() {
         return this.constructor;
     }
-    get isRoot(){
+    /**
+     *
+     * static util
+     * @readonly
+     * @memberof VNode
+     */
+    get isRoot() {
         return this.parent === null;
     }
-    get sliblings(){
-        if(this.isRoot){
+    /**
+     *
+     * static util
+     * @readonly
+     * @memberof VNode
+     */
+    get sliblings() {
+        if (this.isRoot) {
             return [this];
         }
         return this.parent.children;
     }
-    //generic things
-    static create(...args){
+    /**
+     *
+     * non-safe vNode generator use private only
+     * @static
+     * @param {Any} args
+     * @return {VNode}
+     * @memberof VNode
+     */
+    static create(...args) {
         return new (this)(...args);
     }
 }
+/**
+ *
+ *
+ * @export
+ * @class Text
+ * @extends {VNode}
+ */
 export class Text extends VNode {
-    constructor(text = ""){
+    /**
+     *Creates an instance of Text.
+     * @param {string} [text='']
+     * @memberof Text
+     */
+    constructor(text = '') {
         super({});
         this._data = text;
     }
-    create(){
+    /**
+     *
+     * create Text Vnode Generate
+     * @return {Text} dom pure text, not this class
+     * @memberof Text
+     */
+    create() {
         return this.$ref = (window.document.createTextNode(this.data));
     }
-    compare(old,val){
+    /**
+     *
+     * @param {VNode} old
+     * @param {VNode} val
+     * @memberof VNode
+     * @return {Boolean}
+     */
+    compare(old, val) {
         return (old.data === val.data);
     }
-    get data(){
+    /**
+     *
+     *
+     * @memberof Text
+     */
+    get data() {
         return this._data;
     }
-    set data(value){
-        if(!this.static.compare(this._data,value)){
+    /**
+     *
+     * @param {String} value
+     * @memberof Text
+     */
+    set data(value) {
+        if (!this.static.compare(this._data, value)) {
             this._data = value;
             this.$ref.data = value;
         }
     }
-    get type(){
+    /**
+     *type getter
+     *
+     * @readonly
+     * @memberof Text
+     */
+    get type() {
         return V_NODE_TEXT;
     }
 }
+/**
+ *
+ *
+ * @export
+ * @class Element
+ * @extends {VNode}
+ */
 export class Element extends VNode {
-    constructor(tagName,{text,...attributes},...children){
+    /**
+     *Creates an instance of Element.
+     * @param {String} tagName
+     * @param {...{String,Object}} {{text,...attributes}}
+     * @param {VNode} children
+     * @memberof Element
+     */
+    constructor(tagName, {text, events = {}, ...attributes}, ...children) {
+        const entryEvent = Object.entries(events);
+        const isHandler = entryEvent.every(([name, f]) => _isFunction(f));
         super(
             attributes,
             ...children.concat(new Text(text))
         );
         this.tagName = tagName;
+        if (isHandler) {
+            this.events = entryEvent;
+        }
+        // @TODO : proxy and mutatable handle
     }
-    create(){
-        const {tagName,attributes} = this;
+    /**
+     *
+     *
+     * @memberof Element
+     */
+    create() {
+        const {tagName, attributes} = this;
         const $ref = domCache.get(tagName);
-        for(let k in attributes){
+        for (const k in attributes) {
             // todo: 아에 attribute-set을 건너뛰는것도 방법이다 이말이야
-            $ref.setAttribute(k,attributes[k]);
+            if (Object.prototype.hasOwnProperty.call(attributes, k)) {
+                $ref.setAttribute(k, attributes[k]);
+            }
+        }
+        for (const [name, handler] of this.events) {
+            $ref.addEventListener(name, handler.bind(this));
         }
         this.$ref = $ref;
     }
-    compare(oldNode,newNode){
+    /**
+     *
+     * @param {VNode} oldNode
+     * @param {VNode} newNode
+     * @memberof VNode
+     * @return {Boolean}
+     */
+    compare(oldNode, newNode) {
         return oldNode === newNode;
     }
-    get type(){
+
+    /**
+     *type getter
+    *
+    * @readonly
+    * @memberof Text
+    */
+    get type() {
         return V_NODE_TEXT;
     }
 }
+/**
+ *
+ *
+ * @export
+ * @class Fragment
+ * @extends {VNode}
+ */
 export class Fragment extends VNode {
-    constructor(...children){
+    /**
+     *Creates an instance of Fragment.
+     * @param {...VNode} children
+     * @memberof Fragment
+     */
+    constructor(...children) {
         super(
             {},
             ...children
         );
     }
-    create(){
+    /**
+     *
+     *
+     * @memberof Fragment
+     */
+    create() {
         this.$ref = new DocumentFragment();
-    } 
-    compare(old,val){
+    }
+    /**
+     *
+     *
+     * @param {VNode} old
+     * @param {VNode} val
+     * @return {Boolean}
+     * @memberof Fragment
+     */
+    compare(old, val) {
         return true;
     }
-    get type(){
+    /**
+     *
+     *
+     * @readonly
+     * @memberof Fragment
+     */
+    get type() {
         return V_NODE_FRAGMENT;
-    }
-}
-export class Component extends VNode {
-    constructor(){
-        
-    }
-    static render(){
-
-    } 
-    static compare(){
-        return true;
-    }
-    get type(){
-        return V_NODE_COMPONENT;
-    }
-}
-export const _Custom = ({create,compare}) =>{
-    return class extends VNode{ 
-        constructor({...attributes},...children){
-            super(attributes,...children)
-        }
-        create(...args){
-            return create(...args);
-        }
-        comapre(...args){
-            return compare(...args);
-        }
     }
 }

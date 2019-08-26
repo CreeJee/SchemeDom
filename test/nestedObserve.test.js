@@ -89,7 +89,7 @@ test('nested observe render', (done) => {
         expect(document.body.innerHTML).toEqual('<span>yellow</span>');
         document.body.innerHTML = '';
         done();
-    }, 1000);
+    }, 0);
 });
 test('children render', ()=>{
     const o = new ChildrenMock();
@@ -107,7 +107,7 @@ test('nested child observe render', (done) => {
             .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
         document.body.innerHTML = '';
         done();
-    }, 1000);
+    }, 0);
 });
 test('nested child observe double render', (done) => {
     const o = new ObserveChildMock($mockState);
@@ -119,5 +119,5 @@ test('nested child observe double render', (done) => {
             .toEqual('<ul><li>1</li><li>2</li></ul>');
         document.body.innerHTML = '';
         done();
-    }, 1000);
+    }, 0);
 });
