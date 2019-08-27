@@ -14,44 +14,144 @@
         import { Component } from "../src/Component.js";
         import { State } from "../src/State.js";
         import { ObserveComponent } from "../src/ObserveComponent.js";
+
+        const generateStyleProp = (obj) => Object.entries(obj).map(([k,v])=>`${k}:${v};`).join('');
+        const fragment = Component.fragment;
         class TableCellComponent extends Component {
-            constructor(){
+            constructor(text){
                 super();
+                this.text = text;
             }
-            render(u, { text }, ...children){
+            render(u){
+                const {text} = this;
                 return u(
-                    "h1", 
+                    "td", 
                     {
                         text: (text ? text: '#text'),
-                        class: 'TableCell' 
+                        events: {
+                            click: ()=> console.log("Click", text)
+                        },
+                        className: 'TableCell' 
                     },
                 );
             }
         }
         class TableRowComponent extends Component {
-            constructor($parentState){
-                super();
-                this._state = $parentState;
+            constructor(props){
+                super(props);
             }
             render(u, attr, ...children){
+                const {active, id, props} = this.props;
                 return u(
                     'tr',
-                    {class: 'TableRow'},
-                )
+                    {
+                        className: active ? 'TableRow active' : 'TableRow',
+                        'data-id': id
+                    },
+                    u(new TableCellComponent('#' + id)),
+                    fragment(
+                        ...props.map(
+                            (text) => u(new TableCellComponent(text))
+                        )
+                    )
+                );
             }
         }
         class TableComponent extends Component {
-            constructor($parentState){
-                super();
-                this._state = $parentState;
+            constructor(props){
+                super(props);
             }
             render(u, attr, ...children){
                 return u(
                     'table', 
-                    {class: 'Table'},
-                    u(new TableRowComponent(this._state)),
-                    u(new TableRowComponent(this._state))
+                    {className: 'Table'},
+                        u(
+                            'tbody',
+                            {id : 'tbody'},
+                            ...this.props.items.map(
+                                (item)=>u(new TableRowComponent(item))
+                            ),
+                        )
                 );
+            }
+        }
+        class AnimBoxComponent extends Component {
+            constructor($state){
+                super($state);
+            }
+            render(u, attribute, ...children){
+                let {time, id} = this.props;
+                return u(
+                    'div',
+                    {
+                        'data-id': id,
+                        className: 'AnimBox',
+                        style: generateStyleProp({
+                            background: `rgba(0,0,0,${(0.5 + ((time % 10) / 10))})`,
+                            'border-radius': `${(time % 10)}px`
+                        })
+                    },
+                    
+                )
+            }
+        }
+        class AnimComponent extends Component {
+            constructor(props){
+                super(props);
+            }
+            render(u, attribute, ...children){
+                return u(
+                    'div',
+                    {className: 'Anim'},
+                    fragment(
+                        ...this.props.items.map(
+                            (item) => u(new AnimBoxComponent(item))
+                        )
+                    ),
+                )
+            }
+        }
+        class TreeLeafComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u){
+                let {id} = this.props
+                return u(
+                    'li',
+                    {
+                        className: 'TreeLeaf',
+                        text: id,
+                    },
+                )
+            }
+        }
+        class TreeNodeComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attribute, ...children) {
+                return u(
+                    'ul',
+                    { className: 'TreeNode' },
+                    fragment(
+                        ...this.props.children.map(
+                            (item) => u(new (item.container ? TreeNodeComponent : TreeLeafComponent)(item))
+                        )
+                    )
+                )
+            }
+        }
+        class TreeComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attribute, ...children) {
+                return u(
+                    'div',
+                    { className: 'Tree' },
+                    u(new TreeNodeComponent(this.props))
+                )
             }
         }
 
@@ -61,10 +161,28 @@
                 super($state);
             }
             render(u, { text }, ...children) {
+                const {$state} = this;
+
+                let component = null;
+                let {location} = $state;
+                switch (location) {
+                    case 'table':
+                        component = u(new TableComponent($state.table))
+                        break;
+                    case 'anim':
+                        component =  u(new AnimComponent($state.anim))
+                        break;
+                    case 'tree':
+                        component = u(new TreeComponent($state.tree.root))
+                        break;
+                    default:
+                        break;
+                }
+
                 return u(
                     "div",
-                    { text: '#text', class: 'Main'},
-                    u(new TableComponent(this.$state))
+                    { text: '#section', className: 'Main'},
+                    component
                 )
             }
         }
@@ -75,8 +193,9 @@
             const container = document.querySelector("#App");
 
             uibench.run(
-                (state) => {
+                (state,mode) => {
                     container.textContent = "";
+                    window.globalState = state;
                     const component = new MainComponent(new State(state));
                     Component.mount(container, component);
                 },

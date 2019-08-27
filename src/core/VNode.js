@@ -280,8 +280,15 @@ export class Element extends VNode {
         const $ref = domCache.get(tagName);
         for (const k in attributes) {
             // todo: 아에 attribute-set을 건너뛰는것도 방법이다 이말이야
-            if (Object.prototype.hasOwnProperty.call(attributes, k)) {
-                $ref.setAttribute(k, attributes[k]);
+            if (
+                attributes.hasOwnProperty(k) &&
+                $ref[k] !== attributes[k]
+            ) {
+                if (k in $ref) {
+                    $ref[k] = attributes[k];
+                } else {
+                    $ref.setAttribute(k, attributes[k]);
+                }
             }
         }
         for (const [name, handler] of this.events) {

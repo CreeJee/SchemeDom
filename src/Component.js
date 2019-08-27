@@ -1,4 +1,8 @@
-// Add Lifecycle beforeCreate
+// add component dom cloning
+// or
+// auto merge component
+
+//
 import {FixedType} from './core/FixedType.js';
 import {BaseComponent} from './core/BaseComponent.js';
 import {
@@ -25,16 +29,19 @@ export const renderDom = (mountDom, component)=>{
 };
 
 /**
-* @param {Function} Parent
-* @return {Element}
-*/
+ *
+ *
+ * @class Component
+ * @extends {BaseComponent}
+ */
 class Component extends BaseComponent {
     /**
-     * Element constructor
-     * @description on init default tag generate
+     *Creates an instance of Component.
+     * @param {Object} props
+     * @memberof Component
      */
-    constructor() {
-        super();
+    constructor(props) {
+        super(props);
     }
     /**
      * @param {HTMLElement} mountDom
