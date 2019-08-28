@@ -8,11 +8,9 @@ import FixedType from './core/FixedType.js';
  * @description observeComponent lifecycle private util
  */
 const _updated = async (component, props)=>{
-    const slots = component.$slots;
     if (component.isUpdated(props)) {
         await component.mutation(
             await component.deliveredProps(props),
-            slots
         );
     }
 };

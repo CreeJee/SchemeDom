@@ -1,3 +1,10 @@
+/**
+ * vNode attribute 및 bind값 처리법
+ * 보기중 선택
+ *
+ * 1.vNode에 hook[VNodeType][innerType] = [handlerList] 로 추가 후
+ * props를 observe해서 외부에서 변경시 mutation처리
+ */
 const DomCache = class DomCache {
     /**
      *
