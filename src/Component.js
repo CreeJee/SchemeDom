@@ -52,7 +52,7 @@ class Component extends BaseComponent {
         component.$zone = mountDom;
         // 효과적인 dom튜닝방법을 찾을것
         clearDom(mountDom);
-        renderDom(mountDom, component);
+        await renderDom(mountDom, component);
         return this;
     }
     /**
@@ -72,6 +72,14 @@ class Component extends BaseComponent {
     mutation(props, slots) {
         Component.mount(this.$zone, this);
         return this;
+    }
+    /**
+     * @description use safe mutation props
+     * @param {Object} oldProps
+     * @return {Promise<Object>} delivedProps
+     */
+    async deliveredProps(oldProps) {
+        return {};
     }
 }
 Component.mount = FixedType.expect(

@@ -1,7 +1,7 @@
 
 import {Component} from '../../../src/Component.js';
 /**
- * User page Component
+ * Info page Component
  */
 export default class Info extends Component {
     /**
