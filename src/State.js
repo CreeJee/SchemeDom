@@ -44,7 +44,7 @@ class State {
      * @param {Any} value
      * @return {Any} returns value
      */
-    async set(value) {
+    set(value) {
         this.put(value);
         this.history.push(value);
         return value;
@@ -55,10 +55,10 @@ class State {
      * @param {*} value
      * @memberof State
      */
-    async put(value) {
+    put(value) {
         this.forceSet(value);
         for (const observer of this[_eventHandlersSymbol]) {
-            await observer(value);
+            observer(value);
         }
     }
     /**

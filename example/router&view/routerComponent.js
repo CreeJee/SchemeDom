@@ -29,7 +29,7 @@ export class RouterComponent extends ObserveComponent {
     /**
      * @param {Object} props
      */
-    async deliveredProps(props) {
+    async deliveredProps(next, props) {
         let path = this.$state.path;
         if (typeof path !== 'string' || path[0] !== '/') {
             throw new Error('path contains root path');
@@ -37,7 +37,7 @@ export class RouterComponent extends ObserveComponent {
             path = '/index';
         }
         const ViewConstruct = (await import(`./views${path}.js`)).default;
-        return {$currentView: new ViewConstruct(props)};
+        next({$currentView: new ViewConstruct(props)});
     }
     /**
      * router push

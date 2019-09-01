@@ -75,11 +75,11 @@ class Component extends BaseComponent {
     }
     /**
      * @description use safe mutation props
-     * @param {Object} oldProps
+     * @param {Object} props
      * @return {Promise<Object>} delivedProps
      */
-    async deliveredProps(oldProps) {
-        return {};
+    async deliveredProps(next, props) {
+        next(props);
     }
 }
 Component.mount = FixedType.expect(

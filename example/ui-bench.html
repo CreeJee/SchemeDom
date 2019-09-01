@@ -141,6 +141,9 @@
                     )
                 )
             }
+            mutation(props){
+                debugger;
+            }
         }
         class TreeComponent extends Component {
             constructor(props) {
@@ -192,12 +195,18 @@
         document.addEventListener("DOMContentLoaded", (e) => {
             const container = document.querySelector("#App");
 
+            let component = null;
             uibench.run(
                 (state,mode) => {
-                    container.textContent = "";
-                    window.globalState = state;
-                    const component = new MainComponent(new State(state));
-                    Component.mount(container, component);
+                    switch(mode){
+                        case 'init':
+                            component = new MainComponent(new State(state));
+                            Component.mount(container, component);
+                            break;
+                        default :
+                            component.$state.set(state);
+                            break;   
+                    }
                 },
                 (samples) => {
                     document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";

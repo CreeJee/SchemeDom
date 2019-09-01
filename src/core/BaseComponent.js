@@ -2,7 +2,7 @@ export const BaseComponent = class baseComponent {
     /**
      * Base Component
      */
-    constructor({...props} = {}) {
+    constructor(props = {}) {
         this.$vNode = null;
         this.$zone = null;
         this.props = props;

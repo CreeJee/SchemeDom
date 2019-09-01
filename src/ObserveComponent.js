@@ -7,10 +7,11 @@ import FixedType from './core/FixedType.js';
  * @param {Object} props
  * @description observeComponent lifecycle private util
  */
-const _updated = async (component, props)=>{
+const _updated = (component, props)=>{
     if (component.isUpdated(props)) {
-        await component.mutation(
-            await component.deliveredProps(props),
+        component.deliveredProps(
+            component.mutation.bind(component),
+            props
         );
     }
 };
