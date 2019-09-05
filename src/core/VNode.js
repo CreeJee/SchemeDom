@@ -45,8 +45,7 @@ const defaultMutation = function(vNode, parentNode, nth, created) {
     if (created) {
         parentRef.appendChild(selfRef);
     } else {
-        debugger;
-        if (vNode.type !== oldNode.type || !vNode.compare(oldNode, vNode)){
+        if (vNode.type !== oldNode.type || !vNode.compare(oldNode, vNode)) {
             const oldRef = parentRef.childNodes[nth];
             parentRef.insertBefore(selfRef, oldRef);
             oldRef.remove();
@@ -55,16 +54,16 @@ const defaultMutation = function(vNode, parentNode, nth, created) {
     return vNode.$ref;
 };
 
-const __isSameCond = (o1,o2,k) => o1[k] === o2[k];
+const __isSameCond = (o1, o2, k) => o1[k] === o2[k];
 const _isCreateMode = ($vNode)=>$vNode.$ref === null;
 const _isFunction = (v) => typeof v === 'function';
-const _isSameObject = (o1,o2)=>{
-    if(o1 === o2){
+const _isSameObject = (o1, o2)=>{
+    if (o1 === o2) {
         return true;
     }
-    let k1 = Object.keys(o1);
-    let k2 = Object.keys(o2);
-    return k1.length && k2.length && k1.every(__isSameCond.bind(null,o1,o2)); 
+    const k1 = Object.keys(o1);
+    const k2 = Object.keys(o2);
+    return k1.length && k2.length && k1.every(__isSameCond.bind(null, o1, o2));
 };
 export const domCache = DomCache.Instance;
 export const V_NODE_TEXT = Symbol('$$VNodeText');

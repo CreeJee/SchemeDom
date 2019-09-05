@@ -11,7 +11,7 @@ import {
     generate,
 } from './core/VNode.js';
 const bindVNode = (component, props, ...childs) => (
-    component.render(
+    component.$vNode = component.render(
         componentOrElement,
         props,
         ...childs
@@ -22,7 +22,9 @@ const componentOrElement = (arg1, props, ...childs)=>(
         bindVNode(arg1, props, ...childs) :
         VNodeElement.create(arg1, props, ...childs)
 );
-export const clearDom = (mountDom)=>mountDom.innerHTML = '';
+export const clearDom = (mountDom) => {
+    mountDom.innerHTML = '';
+}
 export const renderDom = (mountDom, component)=>{
     component.$vNode = bindVNode(component, {});
     generate(mountDom, component.$vNode);
@@ -75,6 +77,7 @@ class Component extends BaseComponent {
     }
     /**
      * @description use safe mutation props
+     * @param {Function} next async next handler
      * @param {Object} props
      * @return {Promise<Object>} delivedProps
      */

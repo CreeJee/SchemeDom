@@ -101,23 +101,24 @@ test('children render', ()=>{
 test('nested child observe render', (done) => {
     const o = new ObserveChildMock($mockState);
     $mockState.set({list: [1, 2, 3, 4]});
-    Component.mount(document.body, o);
-    setTimeout(()=>{
+    Component.mount(document.body, o).then(()=>{
         expect(document.body.innerHTML)
             .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
         document.body.innerHTML = '';
         done();
-    }, 0);
+    });
 });
 test('nested child observe double render', (done) => {
     const o = new ObserveChildMock($mockState);
     $mockState.set({list: [1, 2, 3, 4]});
-    Component.mount(document.body, o);
-    $mockState.set({list: [1, 2]});
-    setTimeout(()=>{
-        expect(document.body.innerHTML)
-            .toEqual('<ul><li>1</li><li>2</li></ul>');
-        document.body.innerHTML = '';
-        done();
-    }, 0);
+    Component.mount(document.body, o).then(
+        ()=>{
+            $mockState.set({list: [1, 2]});
+            expect(document.body.innerHTML)
+                .toEqual('<ul><li>1</li><li>2</li></ul>');
+            document.body.innerHTML = '';
+            done();
+
+        }
+    );
 });

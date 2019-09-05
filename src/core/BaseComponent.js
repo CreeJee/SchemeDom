@@ -1,6 +1,7 @@
 export const BaseComponent = class baseComponent {
     /**
      * Base Component
+     * @param {Object} props
      */
     constructor(props = {}) {
         this.$vNode = null;
@@ -19,4 +20,3 @@ export const BaseComponent = class baseComponent {
         throw new Error(`"need implements ${this.constructor.name}.action`);
     }
 };
-

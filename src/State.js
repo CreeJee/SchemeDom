@@ -3,12 +3,22 @@ const reflectState = new Map();
 const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
 
+const generateInnerStore = (entry) => new Map(entry);
+// ㄴ
 const stateProxyHandler = {
     get: (o, prop, receiver)=>(
         Reflect.has(o, prop) ?
             Reflect.get(o, prop, receiver) :
             o[_baseStateSymbol].get(prop)
     ),
+    set: (o, propertyKey, value, receiver) => {
+        // TODO : state reminder
+        const store = generateInnerStore(o[_baseStateSymbol].entries());
+        store.set(propertyKey, value);
+        o.set(Object.fromEntries(store));
+        return o;
+    },
+    // proxy hook
     apply: Reflect.apply,
 };
 
@@ -33,7 +43,7 @@ class State {
      * @param {Any} key
      */
     constructor(initState = {}, key = this) {
-        this[_baseStateSymbol] = new Map(Object.entries(initState));
+        this[_baseStateSymbol] = generateInnerStore(Object.entries(initState));
         this[_eventHandlersSymbol] = [];
         this.history = [this[_baseStateSymbol]];
         reflectState.set(key, this);
