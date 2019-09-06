@@ -10,23 +10,30 @@ import {
     Fragment,
     generate,
 } from './core/VNode.js';
-const bindVNode = (component, props, ...childs) => (
+const bindVNode = function(component, props, ...childs) {
     component.$vNode = component.render(
-        componentOrElement,
+        componentOrElement.bind(component),
         props,
         ...childs
-    )
-);
-const componentOrElement = (arg1, props, ...childs)=>(
-    arg1 instanceof BaseComponent ?
-        bindVNode(arg1, props, ...childs) :
-        VNodeElement.create(arg1, props, ...childs)
-);
+    );
+    component.$parent = this;
+    return component.$vNode;
+};
+const componentOrElement = function(arg1, props, ...childs) {
+    return arg1 instanceof BaseComponent ?
+        bindVNode.call(this, arg1, props, ...childs) :
+        VNodeElement.create(arg1, props, ...childs);
+};
 export const clearDom = (mountDom) => {
-    mountDom.innerHTML = '';
-}
-export const renderDom = (mountDom, component)=>{
-    component.$vNode = bindVNode(component, {});
+    const range = document.createRange();
+    range.selectNodeContents(mountDom);
+    range.deleteContents();
+};
+export const renderDom = function(mountDom, component) {
+    component._zone = mountDom;
+    if (component.$vNode === null || component.isUpdated(component.props)) {
+        component.$vNode = bindVNode.call(null, component, component.props);
+    }
     generate(mountDom, component.$vNode);
 };
 
@@ -48,13 +55,12 @@ class Component extends BaseComponent {
     /**
      * @param {HTMLElement} mountDom
      * @param {Component} component
+     * @return {Component}
      */
-    static async mount(mountDom, component) {
-        // render ref logic
-        component.$zone = mountDom;
+    static mount(mountDom, component) {
         // 효과적인 dom튜닝방법을 찾을것
         clearDom(mountDom);
-        await renderDom(mountDom, component);
+        renderDom(mountDom, component);
         return this;
     }
     /**
@@ -68,21 +74,28 @@ class Component extends BaseComponent {
     /**
      * @description if mutation is not defined just re render
      * @param {State} props
-     * @param {Element} slots
      * @return {Element}
      */
-    mutation(props, slots) {
-        Component.mount(this.$zone, this);
+    mutation(props) {
+        const $zone = this.$zone;
+        Component.mount($zone, this);
         return this;
     }
     /**
      * @description use safe mutation props
      * @param {Function} next async next handler
      * @param {Object} props
-     * @return {Promise<Object>} delivedProps
      */
-    async deliveredProps(next, props) {
+    deliveredProps(next, props) {
         next(props);
+    }
+    /**
+     * when needs mutation check
+     * @param {Object} props
+     * @return {Boolean}
+     */
+    isUpdated(props = {}) {
+        return true;
     }
 }
 Component.mount = FixedType.expect(

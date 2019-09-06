@@ -4,22 +4,46 @@ const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
 
 const generateInnerStore = (entry) => new Map(entry);
-// ㄴ
+const toEntries = (o) => Array.from(o.entries()).reduce(
+    (accr, [k, v]) => (accr[k] = v, accr), {}
+);
+const rewriteStore = (o, prop, action) =>{
+    const store = generateInnerStore(o[_baseStateSymbol].entries());
+    action(store, prop);
+    o.set(toEntries(store));
+    return o;
+};
 const stateProxyHandler = {
-    get: (o, prop, receiver)=>(
-        Reflect.has(o, prop) ?
+    get: (o, prop, receiver) => {
+        // console.log('get', o, prop);
+        return Reflect.has(o, prop) ?
             Reflect.get(o, prop, receiver) :
-            o[_baseStateSymbol].get(prop)
-    ),
-    set: (o, propertyKey, value, receiver) => {
-        // TODO : state reminder
-        const store = generateInnerStore(o[_baseStateSymbol].entries());
-        store.set(propertyKey, value);
-        o.set(Object.fromEntries(store));
-        return o;
+            o[_baseStateSymbol].get(prop);
+    },
+    set: (o, prop, value, receiver) => {
+        if (Reflect.has(o, prop)) {
+            return Reflect.set(o, prop, value, receiver);
+        } else {
+            // console.log('set', o, prop);
+            // debugger;
+            rewriteStore(o, prop, (store, prop)=>{
+                store.set(prop, value);
+            });
+            return o;
+        }
+    },
+    deleteProperty: (o, prop, receiver)=> {
+        if (Reflect.has(o, prop, receiver)) {
+            return Reflect.set(o, prop, receiver);
+        } else {
+            rewriteStore(o, prop, (store, prop) => {
+                store.delete(prop);
+            });
+        }
     },
     // proxy hook
     apply: Reflect.apply,
+    has: (o, prop) => o[_baseStateSymbol].has(prop),
 };
 
 /**
@@ -45,7 +69,6 @@ class State {
     constructor(initState = {}, key = this) {
         this[_baseStateSymbol] = generateInnerStore(Object.entries(initState));
         this[_eventHandlersSymbol] = [];
-        this.history = [this[_baseStateSymbol]];
         reflectState.set(key, this);
         return new Proxy(this, stateProxyHandler);
     }
@@ -56,7 +79,6 @@ class State {
      */
     set(value) {
         this.put(value);
-        this.history.push(value);
         return value;
     }
     /**
@@ -80,21 +102,25 @@ class State {
         this[_baseStateSymbol] = new Map(Object.entries(value));
     }
     /**
+     * add event
      * @param {Function} observer
      * @return {State}
      */
-    observe(observer) {
-        this[_eventHandlersSymbol].push(observer);
+    addEvent(observer) {
+        const events = this[_eventHandlersSymbol];
+        if (!events.includes(observer)) {
+            this[_eventHandlersSymbol].push(observer);
+        }
         return this;
     }
     /**
+     * remove event
+     * @param {Function} observer
      * @memberof State
-     * @description rollback State
-     * @return {Promise<State>};
      */
-    revert() {
-        [this[_baseStateSymbol]] = this.history.splice(-1, 1);
-        return this;
+    removeEvent(observer) {
+        const events = this[_eventHandlersSymbol];
+        events.splice(events.indexOf(observer), 1);
     }
 }
 const ProxyConstructor = FixedType.expect(

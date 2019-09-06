@@ -72,7 +72,6 @@ class ObserveChildMock extends ObserveComponent {
         );
     }
 }
-const $mockState = new State();
 test('element render', () => {
     const o = new ComponentMock();
     Component.mount(document.body, o);
@@ -81,15 +80,13 @@ test('element render', () => {
 });
 
 test('nested observe render', (done) => {
+    const $mockState = new State();
     const o = new ObserveMock($mockState);
     Component.mount(document.body, o);
     $mockState.set({text: 'yellow'});
-
-    setTimeout(()=>{
-        expect(document.body.innerHTML).toEqual('<span>yellow</span>');
-        document.body.innerHTML = '';
-        done();
-    }, 0);
+    expect(document.body.innerHTML).toEqual('<span>yellow</span>');
+    document.body.innerHTML = '';
+    done();
 });
 test('children render', ()=>{
     const o = new ChildrenMock();
@@ -99,26 +96,23 @@ test('children render', ()=>{
 });
 
 test('nested child observe render', (done) => {
+    const $mockState = new State();
     const o = new ObserveChildMock($mockState);
     $mockState.set({list: [1, 2, 3, 4]});
-    Component.mount(document.body, o).then(()=>{
-        expect(document.body.innerHTML)
-            .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
-        document.body.innerHTML = '';
-        done();
-    });
+    Component.mount(document.body, o);
+    expect(document.body.innerHTML)
+        .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
+    document.body.innerHTML = '';
+    done();
 });
 test('nested child observe double render', (done) => {
+    const $mockState = new State();
     const o = new ObserveChildMock($mockState);
     $mockState.set({list: [1, 2, 3, 4]});
-    Component.mount(document.body, o).then(
-        ()=>{
-            $mockState.set({list: [1, 2]});
-            expect(document.body.innerHTML)
-                .toEqual('<ul><li>1</li><li>2</li></ul>');
-            document.body.innerHTML = '';
-            done();
-
-        }
-    );
+    Component.mount(document.body, o);
+    $mockState.set({list: [1, 2]});
+    expect(document.body.innerHTML)
+        .toEqual('<ul><li>1</li><li>2</li></ul>');
+    document.body.innerHTML = '';
+    done();
 });

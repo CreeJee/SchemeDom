@@ -5,8 +5,15 @@ export const BaseComponent = class baseComponent {
      */
     constructor(props = {}) {
         this.$vNode = null;
-        this.$zone = null;
+        this.$parent = null;
         this.props = props;
+    }
+    /**
+     * component appendRef
+     * @readonly
+     */
+    get $zone() {
+        return this.$parent === null ? this._zone : this.$parent.$vNode.$ref;
     }
     /**
      * render

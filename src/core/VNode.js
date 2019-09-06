@@ -38,14 +38,17 @@ const DomCache = class DomCache {
         return this.cacheTable.get(tagName).cloneNode(false);
     }
 };
-const defaultMutation = function(vNode, parentNode, nth, created) {
-    const oldNode = parentNode.children[nth];
-    const parentRef = parentNode.$ref;
+const defaultMutation = function(vNode, parentVNode, nth, created) {
+    const oldNode = parentVNode.children[nth];
+    const parentRef = parentVNode.$ref;
     const selfRef = vNode.$ref;
     if (created) {
         parentRef.appendChild(selfRef);
     } else {
-        if (vNode.type !== oldNode.type || !vNode.compare(oldNode, vNode)) {
+        if (
+            vNode.type !== oldNode.type ||
+            !vNode.compare(oldNode, vNode)
+        ) {
             const oldRef = parentRef.childNodes[nth];
             parentRef.insertBefore(selfRef, oldRef);
             oldRef.remove();
@@ -85,7 +88,6 @@ export function generate(mountZone, $vNode) {
     }
     for (const [index, $childNode] of $vNode.children.entries()) {
         generate($vNode.$ref, $childNode);
-        // child가 createMode인것이 필요한건지 parent가 createMode인것이 필요한건지 불충분
         $childNode.mutation($vNode, index, isCreateMode);
     }
     if ($vNode.parent === null) {
@@ -317,13 +319,16 @@ export class Element extends VNode {
     }
     /**
      *
-     * @param {VNode} oldNode
-     * @param {VNode} newNode
+     * @param {HTMLElement} oldNode
+     * @param {HTMLElement} newNode
      * @memberof VNode
      * @return {Boolean}
      */
     compare(oldNode, newNode) {
-        return oldNode.tagName === newNode.tagName && _isSameObject();
+        return (
+            oldNode.tagName === newNode.tagName &&
+            _isSameObject(oldNode.attributes, newNode.attributes)
+        );
     }
 
     /**

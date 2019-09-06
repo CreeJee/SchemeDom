@@ -9,6 +9,7 @@ import FixedType from './core/FixedType.js';
  */
 const _updated = (component, props)=>{
     if (component.isUpdated(props)) {
+        component.props = props;
         component.deliveredProps(
             component.mutation.bind(component),
             props
@@ -28,15 +29,7 @@ class ObserveComponent extends Component {
             throw new Error('need initalized State');
         }
         this.$state = $state;
-        $state.observe(_updated.bind(null, this));
-    }
-    /**
-     * when needs mutation check
-     * @param {Object} props
-     * @return {Boolean}
-     */
-    isUpdated(props = {}) {
-        return true;
+        $state.addEvent(_updated.bind(null, this));
     }
 }
 const ProxyedConstruct = FixedType.expect(
