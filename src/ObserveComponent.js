@@ -31,6 +31,14 @@ class ObserveComponent extends Component {
         this.$state = $state;
         $state.addEvent(_updated.bind(null, this));
     }
+    /**
+     * @description use safe mutation props
+     * @param {Function} next async next handler
+     * @param {State} state
+     */
+    deliveredProps(next, state) {
+        next(state);
+    }
 }
 const ProxyedConstruct = FixedType.expect(
     ObserveComponent,

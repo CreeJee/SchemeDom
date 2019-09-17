@@ -2,20 +2,17 @@ import {FixedType} from './core/FixedType.js';
 const reflectState = new Map();
 const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
-
-const generateInnerStore = (entry) => new Map(entry);
-const toEntries = (o) => Array.from(o.entries()).reduce(
-    (accr, [k, v]) => (accr[k] = v, accr), {}
-);
-const rewriteStore = (o, prop, action) =>{
-    const store = generateInnerStore(o[_baseStateSymbol].entries());
-    action(store, prop);
-    o.set(toEntries(store));
+const __StoreType = Map;
+const generateInnerStore = (entry) => new __StoreType(entry);
+const rewriteStore = (o, action, args = []) =>{
+    const store = generateInnerStore(o[_baseStateSymbol]);
+    store[action].apply(store,args);
+    o.set(store);
     return o;
 };
+// remove proxy memory leak
 const stateProxyHandler = {
     get: (o, prop, receiver) => {
-        // console.log('get', o, prop);
         return Reflect.has(o, prop) ?
             Reflect.get(o, prop, receiver) :
             o[_baseStateSymbol].get(prop);
@@ -24,11 +21,7 @@ const stateProxyHandler = {
         if (Reflect.has(o, prop)) {
             return Reflect.set(o, prop, value, receiver);
         } else {
-            // console.log('set', o, prop);
-            // debugger;
-            rewriteStore(o, prop, (store, prop)=>{
-                store.set(prop, value);
-            });
+            rewriteStore(o, 'set', [prop, value]);
             return o;
         }
     },
@@ -36,9 +29,7 @@ const stateProxyHandler = {
         if (Reflect.has(o, prop, receiver)) {
             return Reflect.set(o, prop, receiver);
         } else {
-            rewriteStore(o, prop, (store, prop) => {
-                store.delete(prop);
-            });
+            rewriteStore(o, 'delete', [prop]);
         }
     },
     // proxy hook
@@ -77,29 +68,20 @@ class State {
      * @param {Any} value
      * @return {Any} returns value
      */
-    set(value) {
-        this.put(value);
-        return value;
-    }
-    /**
-     * put state value
-     *
-     * @param {*} value
-     * @memberof State
-     */
-    put(value) {
+    set(value) { 
         this.forceSet(value);
         for (const observer of this[_eventHandlersSymbol]) {
             observer(value);
         }
+        return value;
     }
     /**
      * force set value for state
-     * @param {*} value
+     * @param {State} value
      * @memberof State
      */
     forceSet(value) {
-        this[_baseStateSymbol] = new Map(Object.entries(value));
+        this[_baseStateSymbol] = value instanceof __StoreType ? value : generateInnerStore(Object.entries(value));
     }
     /**
      * add event

@@ -15,7 +15,9 @@
         import { Component } from "../src/Component.js";
         import { State } from "../src/State.js";
         import { ObserveComponent } from "../src/ObserveComponent.js";
-
+        const __mergeSetter = (target, prop, value) => {
+            return target[prop] = value;
+        }
         const mergeDeep = (target, source) => {
             // Iterate through `source` properties and if an `Object` set property to merge of `target` and `source` properties
             for (let key of Object.keys(source)) {
@@ -26,17 +28,17 @@
                         const _source = currentSource[index];
                         const _target = currentTarget[index];
                         if(_target !== _source){
-                            currentTarget[index] = _source;
+                            __mergeSetter(currentTarget, index, _source);
                         }
                     }
                     if(currentSource.length === 0){
-                        target[key] = currentSource;
+                        __mergeSetter(currentTarget, key, currentSource);
                     }
                     
                 } else if (currentSource instanceof Object){
                     mergeDeep(target[key], source[key])
                 } else if(currentTarget !== currentSource){
-                    target[key] = currentSource;
+                    __mergeSetter(target, key, currentSource);
                 }
             }
             return target
@@ -189,18 +191,12 @@
                 )
             }
         }
-        class MainComponent extends Component {
+        class MainComponent extends ObserveComponent {
             constructor(state){
-                super();
-                if (!(state.table instanceof State)) {
-                    state.table = new State(state.table);
-                    state.anim = new State(state.anim);
-                    state.tree = new State(state.tree);
-                }
-                this.state = state;
+                super(state);
             }
             render(u, { text }, ...children) {
-                const state = this.state;
+                const state = this.$state;
 
                 let component = null;
                 let {location} = state;
@@ -223,10 +219,6 @@
                     component
                 )
             }
-            set location(where){
-                this.state.location = where;
-                this.mutation({});
-            }
         }
         
         uibench.init("SchemeDom-observe", "1.0.0");
@@ -234,17 +226,22 @@
             const container = document.querySelector("#App");
 
             let component = null;
+            let prevState = {};
             uibench.run(
                 (state,mode) => {
                     switch(mode){
                         case 'init':
-                            component = new MainComponent(new State(state));
+                            component = new MainComponent(new State({
+                                table: new State(state.table),
+                                anim: new State(state.anim),
+                                tree: new State(state.tree),
+                                home: state.home,
+                                location: state.location
+                            }));
                             Component.mount(container, component);
                             break;
                         case 'update':
-                            const {table,anim,tree} = component.state;
-                            const {location} = state;  
-                            
+                            const {table,anim,tree,location} = state;
                             switch (location) {
                                 case 'table':
                                     mergeDeep(table, state.table);
@@ -258,10 +255,11 @@
                                 default:
                                     break;
                             }
-                            component.location = location;
+                            component.$state.location = location;
                         default :
                             break;   
                     }
+                    prevState = state;
                 },
                 (samples) => {
                     document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";

@@ -1,3 +1,5 @@
+import * as ENV from './Env.js';
+
 /**
  * vNode attribute 및 bind값 처리법
  * 보기중 선택
@@ -39,9 +41,11 @@ const DomCache = class DomCache {
     }
 };
 const defaultMutation = function(vNode, parentVNode, nth, created) {
-    const oldNode = parentVNode.children[nth];
-    const parentRef = parentVNode.$ref;
-    const selfRef = vNode.$ref;
+    let oldNode = parentVNode.children[nth];
+    let parentRef = parentVNode.$ref;
+    let selfRef = vNode.$ref;
+    //TODO : next와 prev에 대해서 inject대처
+    // 완전히 구조변형을 추천
     if (created) {
         parentRef.appendChild(selfRef);
     } else {
@@ -49,17 +53,22 @@ const defaultMutation = function(vNode, parentVNode, nth, created) {
             vNode.type !== oldNode.type ||
             !vNode.compare(oldNode, vNode)
         ) {
-            const oldRef = parentRef.childNodes[nth];
-            parentRef.insertBefore(selfRef, oldRef);
-            oldRef.remove();
+            // let oldRef = parentRef.childNodes[nth];
+            parentRef.insertBefore(selfRef, oldNode.$ref);
+            oldNode.destory();
+            // oldRef.remove();
+            // oldRef = null;
+
         }
     }
+    oldNode = parentRef = selfRef = null;
     return vNode.$ref;
 };
 
-const __isSameCond = (o1, o2, k) => o1[k] === o2[k];
 const _isCreateMode = ($vNode)=>$vNode.$ref === null;
 const _isFunction = (v) => typeof v === 'function';
+const __isSameCond = (o1, o2, k) => o1[k] === o2[k];
+const __isEntryFunction = ([k, v]) => _isFunction(v);
 const _isSameObject = (o1, o2)=>{
     if (o1 === o2) {
         return true;
@@ -82,6 +91,7 @@ export const V_NODE_UNKNOWN = Symbol('$$VNodeUnknown');
  * @param {VNode} $vNode
  */
 export function generate(mountZone, $vNode) {
+    
     const isCreateMode = _isCreateMode($vNode);
     if (isCreateMode) {
         $vNode.create(mountZone);
@@ -106,7 +116,7 @@ export class VNode {
      * @param {*} children
      * @memberof VNode
      */
-    constructor({...attributes}, ...children) {
+    constructor(attributes = {}, ...children) {
         const childLen = children.length;
         this.attributes = attributes;
         this.children = children;
@@ -137,11 +147,10 @@ export class VNode {
     /**
      *
      * @param {VNode} old
-     * @param {VNode} val
      * @throws {String} need implements
      * @memberof VNode
      */
-    compare(old, val) {
+    compare(old) {
         throw new Error('need implements [compare]');
     }
     /**
@@ -197,6 +206,20 @@ export class VNode {
     static create(...args) {
         return new (this)(...args);
     }
+    /**
+     *
+     * @memberof VNode
+     */
+    destory() {
+        this.prev.next = this.next;
+        this.next.prev = this.prev;
+        this.attributes = null;
+        this.children = null;
+        this.parent = null;
+        this.next = null;
+        this.prev = null;
+        this.$ref = null;
+    }
 }
 /**
  *
@@ -231,8 +254,8 @@ export class Text extends VNode {
      * @memberof VNode
      * @return {Boolean}
      */
-    compare(old, val) {
-        return (old.data === val.data);
+    compare(old) {
+        return (old.data === this.data);
     }
     /**
      *
@@ -248,7 +271,7 @@ export class Text extends VNode {
      * @memberof Text
      */
     set data(value) {
-        if (!this.static.compare(this._data, value)) {
+        if (!this.static.compare(value)) {
             this._data = value;
             this.$ref.data = value;
         }
@@ -278,9 +301,14 @@ export class Element extends VNode {
      * @param {VNode} children
      * @memberof Element
      */
-    constructor(tagName, {text, events = {}, ...attributes}, ...children) {
+    constructor(tagName, attributes, ...children) {
+        const text = attributes.text;
+        const events = attributes.events || {};
         const entryEvent = Object.entries(events);
-        const isHandler = entryEvent.every(([name, f]) => _isFunction(f));
+        const isHandler = entryEvent.every(__isEntryFunction);
+        
+        delete attributes.text;
+        delete attributes.events;
         super(
             attributes,
             ...children.concat(new Text(text))
@@ -313,20 +341,23 @@ export class Element extends VNode {
             }
         }
         for (const [name, handler] of this.events) {
-            $ref.addEventListener(name, handler.bind(this));
+            $ref.addEventListener(
+                name, 
+                handler.bind(this), 
+                ENV.supports.passive ? { capture: false, passive: true } : false
+            );
         }
         this.$ref = $ref;
     }
     /**
      *
-     * @param {HTMLElement} oldNode
-     * @param {HTMLElement} newNode
+     * @param {VNode} newNode
      * @memberof VNode
      * @return {Boolean}
      */
-    compare(oldNode, newNode) {
+    compare(newNode) {
         return (
-            oldNode.tagName === newNode.tagName &&
+            oldNode.$ref.tagName === newNode.$ref.tagName &&
             _isSameObject(oldNode.attributes, newNode.attributes)
         );
     }
