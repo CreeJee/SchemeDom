@@ -10,6 +10,7 @@ import {
     Fragment,
     generate,
 } from './core/VNode.js';
+
 const bindVNode = function(component, props, ...childs) {
     component.$vNode = component.render(
         componentOrElement.bind(component),
@@ -30,11 +31,13 @@ export const clearDom = (mountDom) => {
     range.deleteContents();
 };
 export const renderDom = function(mountDom, component) {
+    let comparedTree = null
     component._zone = mountDom;
-    if (component.$vNode === null || component.isUpdated(component.props)) {
-        component.$vNode = bindVNode.call(null, component, component.props);
+    if(component.$vNode !== null && component.isUpdated()){
+        comparedTree = component.$vNode;
     }
-    generate(mountDom, component.$vNode);
+    component.$vNode = bindVNode.call(null, component, component.props);
+    generate(mountDom, component.$vNode, comparedTree);
 };
 
 /**
@@ -59,7 +62,6 @@ class Component extends BaseComponent {
      */
     static mount(mountDom, component) {
         // 효과적인 dom튜닝방법을 찾을것
-        clearDom(mountDom);
         renderDom(mountDom, component);
         return this;
     }

@@ -159,9 +159,9 @@
 
 
         class MainComponent extends Component {
-            constructor($state) {
-                super($state);
-                this.$state = $state;
+            constructor() {
+                super();
+                this.$state = {};
             }
             render(u, { text }, ...children) {
                 const { $state } = this;
@@ -194,21 +194,10 @@
 
         document.addEventListener("DOMContentLoaded", (e) => {
             const container = document.querySelector("#App");
-            let component = null;
+            let component = new MainComponent();
             uibench.run(
                 (state, mode) => {
-                    // switch (mode) {
-                    //     case 'init':
-                    //         component = new MainComponent(new State(state));
-                    //         Component.mount(container, component);
-                    //         break;
-                    //     case 'update':
-                    //         component.$state.set(state);
-                    //     default:
-                    //         break;
-                    // }
-                    
-                    component = new MainComponent(state);
+                    component.$state = state;
                     Component.mount(container, component);
                 },
                 (samples) => {

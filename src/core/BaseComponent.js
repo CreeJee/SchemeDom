@@ -1,11 +1,11 @@
-export const BaseComponent = class baseComponent {
+export const BaseComponent = class BaseComponent {
     /**
      * Base Component
      * @param {Object} props
      */
     constructor(props = {}) {
-        this.$vNode = null;
         this.$parent = null;
+        this.$vNode = null;
         this.props = props;
     }
     /**

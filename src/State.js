@@ -4,33 +4,12 @@ const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
 const __StoreType = Map;
 const generateInnerStore = (entry) => new __StoreType(entry);
-const rewriteStore = (o, action, args = []) =>{
-    const store = generateInnerStore(o[_baseStateSymbol]);
-    store[action].apply(store,args);
-    o.set(store);
-    return o;
-};
 // remove proxy memory leak
 const stateProxyHandler = {
     get: (o, prop, receiver) => {
         return Reflect.has(o, prop) ?
             Reflect.get(o, prop, receiver) :
             o[_baseStateSymbol].get(prop);
-    },
-    set: (o, prop, value, receiver) => {
-        if (Reflect.has(o, prop)) {
-            return Reflect.set(o, prop, value, receiver);
-        } else {
-            rewriteStore(o, 'set', [prop, value]);
-            return o;
-        }
-    },
-    deleteProperty: (o, prop, receiver)=> {
-        if (Reflect.has(o, prop, receiver)) {
-            return Reflect.set(o, prop, receiver);
-        } else {
-            rewriteStore(o, 'delete', [prop]);
-        }
     },
     // proxy hook
     apply: Reflect.apply,

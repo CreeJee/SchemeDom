@@ -40,42 +40,31 @@ const DomCache = class DomCache {
         return this.cacheTable.get(tagName).cloneNode(false);
     }
 };
-const defaultMutation = function(vNode, parentVNode, nth, created) {
-    let oldNode = parentVNode.children[nth];
-    let parentRef = parentVNode.$ref;
-    let selfRef = vNode.$ref;
-    //TODO : next와 prev에 대해서 inject대처
-    // 완전히 구조변형을 추천
-    if (created) {
-        parentRef.appendChild(selfRef);
-    } else {
-        if (
-            vNode.type !== oldNode.type ||
-            !vNode.compare(oldNode, vNode)
-        ) {
-            // let oldRef = parentRef.childNodes[nth];
-            parentRef.insertBefore(selfRef, oldNode.$ref);
-            oldNode.destory();
-            // oldRef.remove();
-            // oldRef = null;
-
+const defaultMutation = function($vNode, $oldNode) {
+    const $parentVNode = $vNode.parent;
+    let parentRef = $parentVNode.$ref;
+    if ($oldNode === null) { //createMode
+        parentRef.appendChild($vNode.$ref);
+    } else { //modify
+        if($parentVNode.children.includes($oldNode) && $oldNode.$ref.isConnected){
+            parentRef.insertBefore($vNode.$ref, $oldNode.$ref);
+        } else {
+            parentRef.appendChild($vNode.$ref);
         }
+        $oldNode.destory();
     }
-    oldNode = parentRef = selfRef = null;
-    return vNode.$ref;
+    return $vNode.$ref;
 };
-
-const _isCreateMode = ($vNode)=>$vNode.$ref === null;
 const _isFunction = (v) => typeof v === 'function';
 const __isSameCond = (o1, o2, k) => o1[k] === o2[k];
 const __isEntryFunction = ([k, v]) => _isFunction(v);
-const _isSameObject = (o1, o2)=>{
+const _isSameObject = (o1, o2, handler = __isSameCond)=>{
     if (o1 === o2) {
         return true;
     }
     const k1 = Object.keys(o1);
     const k2 = Object.keys(o2);
-    return k1.length && k2.length && k1.every(__isSameCond.bind(null, o1, o2));
+    return k1.length && k2.length && k1.every(handler.bind(null, o1, o2));
 };
 export const domCache = DomCache.Instance;
 export const V_NODE_TEXT = Symbol('$$VNodeText');
@@ -90,17 +79,28 @@ export const V_NODE_UNKNOWN = Symbol('$$VNodeUnknown');
  * @param {Element} mountZone
  * @param {VNode} $vNode
  */
-export function generate(mountZone, $vNode) {
+export function generate(mountZone, $vNode, $oldNode = null) {
+    // fast ref compare vs stringify
+    const isCachedMode = $oldNode !== null && $vNode.type === $oldNode.type && $oldNode.compare($vNode);
     
-    const isCreateMode = _isCreateMode($vNode);
-    if (isCreateMode) {
-        $vNode.create(mountZone);
+    const $children = $vNode.children;
+    const $childLen = $children.length;
+    if (isCachedMode) {
+        $vNode.clone($oldNode);
+    } else {
+        $vNode.create();
     }
-    for (const [index, $childNode] of $vNode.children.entries()) {
-        generate($vNode.$ref, $childNode);
-        $childNode.mutation($vNode, index, isCreateMode);
+    for (let index = 0; index < $childLen; index++) {
+        const $childNode = $children[index];
+        const $oldChildNode = $oldNode instanceof VNode && $oldNode.children.length > index ? $oldNode.children[index] : null;
+        generate($vNode.$ref, $childNode, $oldChildNode);
     }
-    if ($vNode.parent === null) {
+    if($vNode.parent !== null){
+        $vNode.mutation($oldNode);
+    } else {
+        if($oldNode !== null){
+            $oldNode.destory();
+        }
         mountZone.appendChild($vNode.$ref);
     }
 }
@@ -128,7 +128,7 @@ export class VNode {
             if (i > 0) {
                 children[i].prev = children[i-1];
             }
-            if (i <= childLen-1) {
+            if (i < childLen-1) {
                 children[i].next = children[i+1];
             }
         }
@@ -137,12 +137,18 @@ export class VNode {
     }
     /**
      *
-     * @param {VNode} parent
      * @throws {String} need implements
      * @memberof VNode
      */
-    create(parent) {
+    create() {
         throw new Error('need implements [create]');
+    }
+    /**
+     * 
+     * @param {VNode} old 
+     */
+    clone(vNode) {
+        this.create();
     }
     /**
      *
@@ -154,19 +160,15 @@ export class VNode {
         throw new Error('need implements [compare]');
     }
     /**
-     *
-     *
-     * @param {VNode} parent
-     * @param {Number} nth
-     * @param {Boolean} created
+     * @param {VNode} oldNode
+     * @param {Object} config
      * @return {Element}
      * @memberof VNode
      */
-    mutation(parent, nth, created) {
-        return defaultMutation.call(null, this, parent, nth, created);
+    mutation(oldNode) {
+        return defaultMutation.call(null, this, oldNode);
     }
     /**
-     *
      * static util
      * @readonly
      * @memberof VNode
@@ -175,7 +177,6 @@ export class VNode {
         return this.constructor;
     }
     /**
-     *
      * static util
      * @readonly
      * @memberof VNode
@@ -184,7 +185,6 @@ export class VNode {
         return this.parent === null;
     }
     /**
-     *
      * static util
      * @readonly
      * @memberof VNode
@@ -196,7 +196,6 @@ export class VNode {
         return this.parent.children;
     }
     /**
-     *
      * non-safe vNode generator use private only
      * @static
      * @param {Any} args
@@ -211,79 +210,17 @@ export class VNode {
      * @memberof VNode
      */
     destory() {
-        this.prev.next = this.next;
-        this.next.prev = this.prev;
-        this.attributes = null;
-        this.children = null;
+        if(this.prev){
+            this.prev.next = this.next;
+        }
+        if(this.next){
+            this.next.prev = this.prev;
+        }
+        this.attributes = {};
+        this.children = [];
         this.parent = null;
         this.next = null;
         this.prev = null;
-        this.$ref = null;
-    }
-}
-/**
- *
- *
- * @export
- * @class Text
- * @extends {VNode}
- */
-export class Text extends VNode {
-    /**
-     *Creates an instance of Text.
-     * @param {string} [text='']
-     * @memberof Text
-     */
-    constructor(text = '') {
-        super({});
-        this._data = text;
-    }
-    /**
-     *
-     * create Text Vnode Generate
-     * @return {Text} dom pure text, not this class
-     * @memberof Text
-     */
-    create() {
-        return this.$ref = (window.document.createTextNode(this.data));
-    }
-    /**
-     *
-     * @param {VNode} old
-     * @param {VNode} val
-     * @memberof VNode
-     * @return {Boolean}
-     */
-    compare(old) {
-        return (old.data === this.data);
-    }
-    /**
-     *
-     *
-     * @memberof Text
-     */
-    get data() {
-        return this._data;
-    }
-    /**
-     *
-     * @param {String} value
-     * @memberof Text
-     */
-    set data(value) {
-        if (!this.static.compare(value)) {
-            this._data = value;
-            this.$ref.data = value;
-        }
-    }
-    /**
-     *type getter
-     *
-     * @readonly
-     * @memberof Text
-     */
-    get type() {
-        return V_NODE_TEXT;
     }
 }
 /**
@@ -302,21 +239,22 @@ export class Element extends VNode {
      * @memberof Element
      */
     constructor(tagName, attributes, ...children) {
-        const text = attributes.text;
         const events = attributes.events || {};
         const entryEvent = Object.entries(events);
         const isHandler = entryEvent.every(__isEntryFunction);
-        
-        delete attributes.text;
-        delete attributes.events;
         super(
             attributes,
-            ...children.concat(new Text(text))
+            ...children
         );
+        this.tagName = tagName;
+        this.text = attributes.text;
         this.tagName = tagName;
         if (isHandler) {
             this.events = entryEvent;
         }
+        
+        delete attributes.text;
+        delete attributes.events;
         // @TODO : proxy and mutatable handle
     }
     /**
@@ -336,6 +274,7 @@ export class Element extends VNode {
                 if (k in $ref) {
                     $ref[k] = attributes[k];
                 } else {
+                    // 좀 비용비싼대 뺄까?
                     $ref.setAttribute(k, attributes[k]);
                 }
             }
@@ -347,7 +286,13 @@ export class Element extends VNode {
                 ENV.supports.passive ? { capture: false, passive: true } : false
             );
         }
+        if(this.text !== undefined){
+            $ref.appendChild(document.createTextNode(this.text))
+        }
         this.$ref = $ref;
+    }
+    clone(vNode){
+        this.$ref = vNode.$ref.cloneNode(false);
     }
     /**
      *
@@ -357,21 +302,31 @@ export class Element extends VNode {
      */
     compare(newNode) {
         return (
-            oldNode.$ref.tagName === newNode.$ref.tagName &&
-            _isSameObject(oldNode.attributes, newNode.attributes)
+            this.tagName === newNode.tagName &&
+            this.text === newNode.text &&
+            _isSameObject(this.attributes, newNode.attributes)
         );
     }
 
     /**
-     *type getter
+    * type getter
     *
     * @readonly
     * @memberof Text
     */
     get type() {
-        return V_NODE_TEXT;
+        return V_NODE_ELEMENT;
+    }
+    /**
+     *
+     * @memberof VNode
+     */
+    destory() {
+        super.destory();
+        this.$ref.remove();
     }
 }
+export let _fragmentCount = -1;
 /**
  *
  *
@@ -390,6 +345,7 @@ export class Fragment extends VNode {
             {},
             ...children
         );
+        this.uid = (++_fragmentCount);
     }
     /**
      *
@@ -401,14 +357,17 @@ export class Fragment extends VNode {
     }
     /**
      *
-     *
-     * @param {VNode} old
-     * @param {VNode} val
+     * @param {VNode} newNode
+     * @memberof VNode
      * @return {Boolean}
-     * @memberof Fragment
      */
-    compare(old, val) {
-        return true;
+    compare(newNode) {
+        return false;
+        // debugger;
+        // return this.uid === newNode.uid;
+        // return (
+        //     _isSameObject(this.children) &&
+        // );
     }
     /**
      *
@@ -419,4 +378,5 @@ export class Fragment extends VNode {
     get type() {
         return V_NODE_FRAGMENT;
     }
+    
 }

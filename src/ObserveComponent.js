@@ -29,7 +29,7 @@ class ObserveComponent extends Component {
             throw new Error('need initalized State');
         }
         this.$state = $state;
-        $state.addEvent(_updated.bind(null, this));
+        $state.addEvent(this._updated.bind(this));
     }
     /**
      * @description use safe mutation props
@@ -39,6 +39,16 @@ class ObserveComponent extends Component {
     deliveredProps(next, state) {
         next(state);
     }
+    _updated(props){
+        if (this.isUpdated(props)) {
+            this.props = props;
+            this.deliveredProps(
+                this.mutation.bind(this),
+                props
+            );
+        }
+    }
+
 }
 const ProxyedConstruct = FixedType.expect(
     ObserveComponent,
