@@ -27,5 +27,10 @@
     "plugins": [
       "transform-es2015-modules-commonjs"
     ]
+  },
+  "jest": {
+    "setupFiles": [
+      "./jest/mockup/document.createRange"
+    ]
   }
 }

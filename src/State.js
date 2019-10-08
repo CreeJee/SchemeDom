@@ -47,7 +47,7 @@ class State {
      * @param {Any} value
      * @return {Any} returns value
      */
-    set(value) { 
+    set(value) {
         this.forceSet(value);
         for (const observer of this[_eventHandlersSymbol]) {
             observer(value);
@@ -60,7 +60,11 @@ class State {
      * @memberof State
      */
     forceSet(value) {
-        this[_baseStateSymbol] = value instanceof __StoreType ? value : generateInnerStore(Object.entries(value));
+        this[_baseStateSymbol] = (
+            value instanceof __StoreType ?
+                value :
+                generateInnerStore(Object.entries(value))
+        );
     }
     /**
      * add event

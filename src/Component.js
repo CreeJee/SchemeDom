@@ -11,18 +11,18 @@ import {
     generate,
 } from './core/VNode.js';
 
-const bindVNode = function(component, props, ...childs) {
+const bindVNode = function(parent, component, props, ...childs) {
     component.$vNode = component.render(
         componentOrElement.bind(component),
         props,
         ...childs
     );
-    component.$parent = this;
+    component.$parent = parent;
     return component.$vNode;
 };
 const componentOrElement = function(arg1, props, ...childs) {
     return arg1 instanceof BaseComponent ?
-        bindVNode.call(this, arg1, props, ...childs) :
+        bindVNode(this, arg1, props, ...childs) :
         VNodeElement.create(arg1, props, ...childs);
 };
 export const clearDom = (mountDom) => {
@@ -31,12 +31,12 @@ export const clearDom = (mountDom) => {
     range.deleteContents();
 };
 export const renderDom = function(mountDom, component) {
-    let comparedTree = null
+    let comparedTree = null;
     component._zone = mountDom;
-    if(component.$vNode !== null && component.isUpdated()){
+    if (component.$vNode !== null && component.isUpdated()) {
         comparedTree = component.$vNode;
     }
-    component.$vNode = bindVNode.call(null, component, component.props);
+    component.$vNode = bindVNode(null, component, component.props);
     generate(mountDom, component.$vNode, comparedTree);
 };
 

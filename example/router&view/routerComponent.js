@@ -42,6 +42,7 @@ export class RouterComponent extends ObserveComponent {
      * @memberof RouterComponent
      */
     mutation({$currentView, ...props}) {
+        // flushing
         Component.mount(this.$zone, $currentView);
     }
     /**
