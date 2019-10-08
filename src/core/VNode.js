@@ -2,6 +2,17 @@ import * as ENV from './Env.js';
 // observe 타입기준은
 //    attribute 와
 //    children 이있음 (실제로 children 안에 textNode 나 Element 나 같은걸로 취급해도 상관없을듯)
+const attributeEffect = ($ref, attributeName) => (value) => {
+    $ref.attributes[attributeName] = value;
+};
+const slotEffect = ($ref) => (value) => {
+    
+};
+const textEffect = ($ref) => (value) => {
+
+};
+
+
 const Effect = class Effect {
     static watch = [];
     // vaild,mark가 쌍으로 매칭되야하는데 이때 이걸 어캐 메칭해야 자알메칭했다고 할끄아
@@ -60,20 +71,32 @@ const Effect = class Effect {
         }
     }
     /**
+     * attach handler
      * @static
+     * @param {Number} uid
+     * @param {Function} on
      */
     static attach(uid, on) {
-
+        const watch = this.watch;
+        if (watch.length > uid) {
+            watch[uid].attach(on);
+        }
     }
     /**
      *Creates an instance of Effect.
      * @param {any} v
-     * @param {...function} on
      */
-    constructor(v, ...on) {
+    constructor(v) {
         this.uid = this.constructor.watch.push(this) - 1;
         this._value = v;
-        this.handlers = on;
+        this.handlers = [];
+    }
+    /**
+     * attach handler
+     * @param {Function} on
+     */
+    attach(on) {
+        this.handlers.push(on);
     }
     /**
      * @param {any} v
@@ -108,13 +131,6 @@ const Effect = class Effect {
         this._value = undefined;
         this.uid = -1;
     }
-    /**
-     *
-     *
-     */
-    attach() {
-
-    }
 };
 
 // const noOp = () => {};
@@ -142,7 +158,7 @@ const html = (templateGroup, ...mutationVariable) => {
         for (const pair of _nextNode.attributes) {
             const uid = Effect.unMark(pair.value);
             if (!isNaN(uid)) {
-                debugger;
+                Effect.attach(uid, attributeEffect(_nextNode, pair.key));
             }
         }
     }

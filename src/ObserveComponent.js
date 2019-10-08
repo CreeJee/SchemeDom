@@ -1,21 +1,7 @@
 import Component from './Component.js';
 import {State} from './State.js';
 import FixedType from './core/FixedType.js';
-/**
- * @private
- * @param {Component} component
- * @param {Object} props
- * @description observeComponent lifecycle private util
- */
-const _updated = (component, props)=>{
-    if (component.isUpdated(props)) {
-        component.props = props;
-        component.deliveredProps(
-            component.mutation.bind(component),
-            props
-        );
-    }
-};
+
 /**
  * ObserveComponent
  */
@@ -39,7 +25,12 @@ class ObserveComponent extends Component {
     deliveredProps(next, state) {
         next(state);
     }
-    _updated(props){
+    /**
+    * @private
+    * @param {Object} props
+    * @description observeComponent lifecycle private util
+    */
+    _updated(props) {
         if (this.isUpdated(props)) {
             this.props = props;
             this.deliveredProps(
@@ -48,7 +39,6 @@ class ObserveComponent extends Component {
             );
         }
     }
-
 }
 const ProxyedConstruct = FixedType.expect(
     ObserveComponent,
