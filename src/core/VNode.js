@@ -2,14 +2,15 @@ import * as ENV from './Env.js';
 // observe 타입기준은
 //    attribute 와
 //    children 이있음 (실제로 children 안에 textNode 나 Element 나 같은걸로 취급해도 상관없을듯)
+
 const attributeEffect = ($ref, attributeName) => (value) => {
     $ref.attributes[attributeName] = value;
 };
-const slotEffect = ($ref) => (value) => {
-    
+const slotEffect = (effect) => (value) => {
+    effect.notify(value);
 };
 const textEffect = ($ref) => (value) => {
-
+    $ref.data = value;
 };
 
 
@@ -83,6 +84,15 @@ const Effect = class Effect {
         }
     }
     /**
+     * @static
+     * @param {Number} uid
+     * @return {Effect}
+     */
+    static get(uid) {
+        const watch = this.watch;
+        return watch.length > uid ? this.vaild[uid] : null;
+    }
+    /**
      *Creates an instance of Effect.
      * @param {any} v
      */
@@ -101,7 +111,7 @@ const Effect = class Effect {
     /**
      * @param {any} v
      */
-    set value(v) {
+    notify(v) {
         this._value = v;
         this.effect();
     }
@@ -133,19 +143,24 @@ const Effect = class Effect {
     }
 };
 
-// const noOp = () => {};
+
 const html = (templateGroup, ...mutationVariable) => {
     const [startAt, ...others] = templateGroup;
     const mutationSize = mutationVariable.length;
 
     const resultDom = document.createElement('template');
+    let cacheKey = startAt;
     let content = startAt;
+    // TODO : cacheKey 생성후 content 가져오기 
     let walker = null;
     let _nextNode = null;
 
     for (let nth = 0; nth < mutationSize; nth++) {
-        content += Effect.generate(mutationVariable[nth]) + others[nth];
+        const currentString = others[nth];
+        content += Effect.generate(mutationVariable[nth]) + currentString;
+        cacheKey += currentString;
     }
+    
     resultDom.innerHTML = content;
     walker = document.createTreeWalker(
         resultDom.content,
@@ -155,15 +170,38 @@ const html = (templateGroup, ...mutationVariable) => {
     );
 
     while (_nextNode = walker.nextNode()) {
-        for (const pair of _nextNode.attributes) {
-            const uid = Effect.unMark(pair.value);
-            if (!isNaN(uid)) {
-                Effect.attach(uid, attributeEffect(_nextNode, pair.key));
+        let uid = NaN;
+        let attributes = null;
+        let attributeSize = -1;
+        let value = null;
+
+        switch (_nextNode.nodeType) {
+        case Node.ELEMENT_NODE:
+            attributes = _nextNode.attributes;
+            attributeSize = attributes.length;
+            for (let index = 0; index < attributeSize; index++) {
+                const pair = attributes[index];
+                uid = Effect.unMark(pair.value);
+                if (!isNaN(uid)) {
+                    Effect.attach(uid, attributeEffect(_nextNode, pair.key));
+                }
             }
+            break;
+        case Node.TEXT_NODE:
+            uid = Effect.unMark(_nextNode.data);
+            if (!isNaN(uid)) {
+                value = Effect.get(uid);
+                Effect.attach(
+                    uid,
+                    value instanceof Effect ?
+                        slotEffect(value) :
+                        textEffect(_nextNode)
+                );
+            }
+            break;
         }
     }
-    // gonna next and attach observe
-    // 또한 이미 생성된 child
+    return resultDom.content;
 };
 html`<div class='group' id='${2}'>
     <span>${1}</span>
