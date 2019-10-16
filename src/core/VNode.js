@@ -10,8 +10,9 @@ const attributeEffect = ($ref, attributeName) => (value) => {
 };
 const slotEffect = ($ref) => (value) => {
     const $tempRoot = document.createDocumentFragment();
+    const $collection = domParser.parseFromString(value.join(''), 'text/html');
     _clearDom($ref);
-    for (const node of value) {
+    for (const node of $collection.all) {
         $tempRoot.append(node);
     }
     $ref.appendChild($tempRoot);
@@ -172,14 +173,13 @@ const Effect = class Effect {
     }
 };
 
-
-const html = (templateGroup, ...mutationVariable) => {
+const domParser = new DOMParser();
+export const html = (templateGroup, ...mutationVariable) => {
     const [startAt, ...others] = templateGroup;
     const mutationSize = mutationVariable.length;
-
-    const resultDom = document.createElement('template');
+    const _clonedFragment = new DocumentFragment();
     let content = startAt;
-    let _clonedFragment = null;
+    let _parsedXml = null;
     // TODO : cacheKey 생성후 content 가져오기 
     let _walker = null;
     let _nextNode = null;
@@ -189,8 +189,10 @@ const html = (templateGroup, ...mutationVariable) => {
         const currentString = others[nth];
         content += Effect.generate(mutationVariable[nth]) + currentString;
     }
-    resultDom.innerHTML = content;
-    _clonedFragment = resultDom.content;
+    _parsedXml = domParser.parseFromString(content, 'text/xml').children;
+    for (const el of _parsedXml) {
+        _clonedFragment.appendChild(el);
+    }
     _walker = document.createTreeWalker(
         _clonedFragment,
         NodeFilter.SHOW_ALL,
@@ -228,9 +230,9 @@ const html = (templateGroup, ...mutationVariable) => {
     }
     return _clonedFragment;
 };
-window.start = performance.now()
-window.result = html`<div class='group' id='${2}'>
-    <span>${1}</span>
-    ${Array.from({length: 10000}).fill('').map((v, k) => `<span>${k}</span>`)}
-</div>`;
-console.log(performance.now() - window.start);
+// window.start = performance.now();
+// window.result = u`<div class='group' id='${2}'>
+//     <span>${1}</span>
+//     ${Array.from({length: 10000}).fill('').map((v, k) => `<span>${k}</span>`)}
+// </div>`;
+// console.log(performance.now() - window.start);

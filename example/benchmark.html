@@ -16,35 +16,16 @@
     
         window.start = performance.now();
         window.end = 0;
-        class MutationComponent extends Component{
-            render(u,{text},...children){
-                return u("li",{},...children)
+        class TestComponent extends Component{
+            render(u) {
+                const renderArray = Array.from({ length: $state.count }, (v) => "");
+
+                return u`<ul>
+                    ${renderArray.map((_, i) => `<li>${i}</li>`)}
+                </ul>`;
             }
         }
-        class RootComponent extends ObserveComponent{
-            constructor($state){
-                super($state);
-            }
-            render(u){
-                const count = this.$state.count;
-                const renderArray = Array.from({length:count},(v)=>"");
-                const childComp = new MutationComponent();
-                return u("ul",{},
-                    Component.fragment(
-                        ...renderArray.map((_,i)=>(
-                            u("li",{text : i},)
-                        ))
-                    )
-                    
-                )
-            }
-        }
-        class RouterComponent extends Component{
-            render(u){
-                return u(new RootComponent($state));
-            }
-        }
-        let root = new RouterComponent();
+        let root = new TestComponent();
         ObserveComponent.mount(
             document.querySelector("#app"),
             root
