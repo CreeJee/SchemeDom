@@ -1,18 +1,33 @@
-import * as ENV from './Env.js';
-// observe 타입기준은
-//    attribute 와
-//    children 이있음 (실제로 children 안에 textNode 나 Element 나 같은걸로 취급해도 상관없을듯)
+// import * as ENV from './Env.js';
 
-const attributeEffect = ($ref, attributeName) => (value) => {
-    $ref.attributes[attributeName] = value;
+const _clearDom = (mountDom) => {
+    const range = document.createRange();
+    range.selectNodeContents(mountDom);
+    range.deleteContents();
 };
-const slotEffect = (effect) => (value) => {
-    effect.notify(value);
+const attributeEffect = ($ref, attributeName) => (value) => {
+    $ref.attributes[attributeName].value = value;
+};
+const slotEffect = ($ref) => (value) => {
+    const $tempRoot = document.createDocumentFragment();
+    _clearDom($ref);
+    for (const node of value) {
+        $tempRoot.append(node);
+    }
+    $ref.appendChild($tempRoot);
 };
 const textEffect = ($ref) => (value) => {
     $ref.data = value;
 };
 
+const _invokeAttach = (uid, findEffect) => {
+    if (!isNaN(uid)) {
+        const effect = Effect.get(uid);
+        const attachFunctor = findEffect(effect, findEffect);
+        attachFunctor(effect.value);
+        Effect.attach(uid, attachFunctor);
+    }
+};
 
 const Effect = class Effect {
     static watch = [];
@@ -23,9 +38,18 @@ const Effect = class Effect {
      * @param {String} expr
      * @return {Boolean}
      */
-    static vaild(expr) {
+    static vaildExpr(expr) {
         const len = expr.length;
         return expr[0] === '#' && expr[1] === '[' && expr[len - 1] === ']';
+    }
+    /**
+     * @memberof Effect
+     * @static
+     * @param {Number} uid
+     * @return {Boolean}
+     */
+    static vaildUid(uid) {
+        return this.watch.length > uid;
     }
     /**
      *
@@ -54,7 +78,7 @@ const Effect = class Effect {
      * @return {Number}
      */
     static unMark(expr) {
-        return this.vaild(expr) ? parseFloat(expr.slice(2, -1)) : NaN;
+        return this.vaildExpr(expr) ? parseFloat(expr.slice(2, -1)) : NaN;
     }
     /**
      *
@@ -78,9 +102,8 @@ const Effect = class Effect {
      * @param {Function} on
      */
     static attach(uid, on) {
-        const watch = this.watch;
-        if (watch.length > uid) {
-            watch[uid].attach(on);
+        if (this.vaildUid(uid)) {
+            this.watch[uid].attach(on);
         }
     }
     /**
@@ -89,8 +112,7 @@ const Effect = class Effect {
      * @return {Effect}
      */
     static get(uid) {
-        const watch = this.watch;
-        return watch.length > uid ? this.vaild[uid] : null;
+        return this.vaildUid(uid) ? this.watch[uid] : null;
     }
     /**
      *Creates an instance of Effect.
@@ -114,6 +136,13 @@ const Effect = class Effect {
     notify(v) {
         this._value = v;
         this.effect();
+    }
+    /**
+     * gain value
+     * @return {any} v
+     */
+    get value() {
+        return this._value;
     }
     /**
      * side effect exec
@@ -149,65 +178,59 @@ const html = (templateGroup, ...mutationVariable) => {
     const mutationSize = mutationVariable.length;
 
     const resultDom = document.createElement('template');
-    let cacheKey = startAt;
     let content = startAt;
+    let _clonedFragment = null;
     // TODO : cacheKey 생성후 content 가져오기 
-    let walker = null;
+    let _walker = null;
     let _nextNode = null;
+
 
     for (let nth = 0; nth < mutationSize; nth++) {
         const currentString = others[nth];
         content += Effect.generate(mutationVariable[nth]) + currentString;
-        cacheKey += currentString;
     }
-    
     resultDom.innerHTML = content;
-    walker = document.createTreeWalker(
-        resultDom.content,
+    _clonedFragment = resultDom.content;
+    _walker = document.createTreeWalker(
+        _clonedFragment,
         NodeFilter.SHOW_ALL,
         null,
         false
     );
 
-    while (_nextNode = walker.nextNode()) {
+    while (_nextNode = _walker.nextNode()) {
         let uid = NaN;
         let attributes = null;
         let attributeSize = -1;
-        let value = null;
 
         switch (_nextNode.nodeType) {
         case Node.ELEMENT_NODE:
             attributes = _nextNode.attributes;
             attributeSize = attributes.length;
             for (let index = 0; index < attributeSize; index++) {
-                const pair = attributes[index];
-                uid = Effect.unMark(pair.value);
-                if (!isNaN(uid)) {
-                    Effect.attach(uid, attributeEffect(_nextNode, pair.key));
-                }
+                const {name, value} = attributes[index];
+                uid = Effect.unMark(value);
+                _invokeAttach(uid, () => attributeEffect(_nextNode, name));
             }
             break;
         case Node.TEXT_NODE:
-            uid = Effect.unMark(_nextNode.data);
-            if (!isNaN(uid)) {
-                value = Effect.get(uid);
-                Effect.attach(
-                    uid,
-                    value instanceof Effect ?
-                        slotEffect(value) :
+            uid = Effect.unMark(_nextNode.data.trim());
+            _invokeAttach(
+                uid,
+                ({value}) => (
+                    value instanceof Array ?
+                        slotEffect(_nextNode.parentNode) :
                         textEffect(_nextNode)
-                );
-            }
+                )
+            );
             break;
         }
     }
-    return resultDom.content;
+    return _clonedFragment;
 };
-html`<div class='group' id='${2}'>
+window.start = performance.now()
+window.result = html`<div class='group' id='${2}'>
     <span>${1}</span>
-    ${Array.from({length: 10}).fill(`<span></span>`)}
+    ${Array.from({length: 10000}).fill('').map((v, k) => `<span>${k}</span>`)}
 </div>`;
-export const mutation = (uid, value) => {
-    // uid 에 알맞는 effect 군들을 call해주면됨;
-    // group에 대하여 대책은 차후 생각해보za
-};
+console.log(performance.now() - window.start);
