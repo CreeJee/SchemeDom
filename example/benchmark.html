@@ -18,8 +18,7 @@
         window.end = 0;
         class TestComponent extends Component{
             render(u) {
-                const renderArray = Array.from({ length: $state.count }, (v) => "");
-
+                const renderArray = Array.from({ length: 10000 }, (v) => "");
                 return u`<ul>
                     ${renderArray.map((_, i) => `<li>${i}</li>`)}
                 </ul>`;

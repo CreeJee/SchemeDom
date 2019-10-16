@@ -1,5 +1,10 @@
 // import * as ENV from './Env.js';
 
+const _domParser = new DOMParser();
+const _toDomCollection = (content) => {
+    const node = _domParser.parseFromString(`<p>${content}</p>`, 'text/xml');
+    return Array.from(node.childNodes[0].childNodes);
+};
 const _clearDom = (mountDom) => {
     const range = document.createRange();
     range.selectNodeContents(mountDom);
@@ -10,9 +15,8 @@ const attributeEffect = ($ref, attributeName) => (value) => {
 };
 const slotEffect = ($ref) => (value) => {
     const $tempRoot = document.createDocumentFragment();
-    const $collection = domParser.parseFromString(value.join(''), 'text/html');
     _clearDom($ref);
-    for (const node of $collection.all) {
+    for (const node of _toDomCollection(value.join(''))) {
         $tempRoot.append(node);
     }
     $ref.appendChild($tempRoot);
@@ -172,15 +176,11 @@ const Effect = class Effect {
         this.uid = -1;
     }
 };
-
-const domParser = new DOMParser();
 export const html = (templateGroup, ...mutationVariable) => {
     const [startAt, ...others] = templateGroup;
     const mutationSize = mutationVariable.length;
-    const _clonedFragment = new DocumentFragment();
+    const _clonedFragment = document.createDocumentFragment();
     let content = startAt;
-    let _parsedXml = null;
-    // TODO : cacheKey 생성후 content 가져오기 
     let _walker = null;
     let _nextNode = null;
 
@@ -189,8 +189,7 @@ export const html = (templateGroup, ...mutationVariable) => {
         const currentString = others[nth];
         content += Effect.generate(mutationVariable[nth]) + currentString;
     }
-    _parsedXml = domParser.parseFromString(content, 'text/xml').children;
-    for (const el of _parsedXml) {
+    for (const el of _toDomCollection(content)) {
         _clonedFragment.appendChild(el);
     }
     _walker = document.createTreeWalker(

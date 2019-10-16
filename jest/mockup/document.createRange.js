@@ -11,14 +11,31 @@ Range.prototype.createContextualFragment = (
 );
 
 // HACK: Polyfil that allows codemirror to render in a JSDOM env.
-global.window.document.createRange = function createRange() {
-    return {
-        setEnd: () => { },
-        setStart: () => { },
-        getBoundingClientRect: () => {
-            return {right: 0};
-        },
-        getClientRects: () => [],
-        createContextualFragment,
-    };
-};
+// global.window.document.createRange = function createRange() {
+//     return {
+//         setEnd: () => { },
+//         setStart: () => { },
+//         getBoundingClientRect: () => {
+//             return {right: 0};
+//         },
+//         getClientRects: () => [],
+//         createContextualFragment,
+//     };
+// };
+
+global.document.createRange = () => ({
+    setStart: () => { },
+    setEnd: () => { },
+    getBoundingClientRect: () => {
+        return {right: 0};
+    },
+    getClientRects: () => [],
+    createContextualFragment,
+    commonAncestorContainer: {
+        nodeName: 'BODY',
+        ownerDocument: document,
+    },
+    selectNodeContents: (nodes) => {
+        debugger;
+    }
+});

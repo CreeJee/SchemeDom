@@ -11,7 +11,7 @@ class ComponentMock extends Component {
      * @return {HTMLElement|DocumentFragment}
      */
     render(u) {
-        return u('span', {});
+        return u`<span></span>`;
     }
 }
 /**
@@ -30,7 +30,7 @@ class ObserveMock extends ObserveComponent {
      * @return {HTMLElement|DocumentFragment}
      */
     render(u) {
-        return u('span', {text: this.$state.text});
+        return u`<span>${this.$state.text}</span>`;
     }
 }
 /**
@@ -42,9 +42,7 @@ class ChildrenMock extends Component {
      * @return {HTMLElement}
      */
     render(u) {
-        return u('ul', {},
-            u('li', {})
-        );
+        return u`<ul><li></li></ul>`;
     }
 }
 /**
@@ -67,9 +65,10 @@ class ObserveChildMock extends ObserveComponent {
         if (!Array.isArray(childState)) {
             throw new Error('need $state.list');
         }
-        return u('ul', {},
-            ...childState.map((i)=>u('li', {text: i}))
-        );
+        return u`<ul>${childState.map((i)=>`<li>${i}</li>`)}</ul>`;
+        // return u('ul', {},
+        //     ...childState.map((i)=>u('li', {text: i}))
+        // );
     }
 }
 test('element render', () => {
