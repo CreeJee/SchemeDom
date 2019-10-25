@@ -5,14 +5,14 @@
 //
 import {FixedType} from './core/FixedType.js';
 import {BaseComponent} from './core/BaseComponent.js';
-import {
-    html as create,
-} from './core/VNode.js';
+import {create, update} from './core/VNode.js';
 
 export const renderDom = function(mountDom, component) {
-    const res = component.render(create, component.props, component.slots);
+    const res = component.render(
+        create(mountDom), component.props, component.slots
+    );
     component._zone = mountDom;
-    mountDom.appendChild(res);
+    component.$vNode = res;
 };
 
 /**
@@ -46,8 +46,12 @@ class Component extends BaseComponent {
      * @return {Element}
      */
     mutation(props) {
-        const $zone = this.$zone;
-        Component.mount($zone, this);
+        renderDom(this.$zone, this, update(this.$vNode));
+        this.render(
+            update(this.$vNode),
+            this.props,
+            this.slots
+        );
         return this;
     }
     /**

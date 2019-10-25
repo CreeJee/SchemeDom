@@ -16,9 +16,12 @@
     
         window.start = performance.now();
         window.end = 0;
-        class TestComponent extends Component{
+        class TestComponent extends ObserveComponent{
+            constructor(){
+                super($state);
+            }
             render(u) {
-                const renderArray = Array.from({ length: 10000 }, (v) => "");
+                const renderArray = Array.from({ length: this.$state.count }, (v) => "");
                 return u`<ul>
                     ${renderArray.map((_, i) => `<li>${i}</li>`)}
                 </ul>`;
@@ -29,6 +32,7 @@
             document.querySelector("#app"),
             root
         );
+        $state.set({count : 10});
         window.end = performance.now();
         console.log(window.end-window.start);
     </script>
