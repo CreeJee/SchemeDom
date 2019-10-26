@@ -18,7 +18,6 @@
         import { ObserveComponent } from "../src/ObserveComponent.js";
 
         const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
-        const fragment = Component.fragment;
         class TableCellComponent extends Component {
             constructor(text) {
                 super();
@@ -26,16 +25,9 @@
             }
             render(u) {
                 const { text } = this;
-                return u(
-                    "td",
-                    {
-                        text: (text ? text : '#text'),
-                        events: {
-                            click: () => console.log("Click", text)
-                        },
-                        className: 'TableCell'
-                    },
-                );
+                const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
+                $dom.addEventListener('click',() => console.log("Click", text));
+                return $dom;
             }
         }
         class TableRowComponent extends Component {
@@ -44,19 +36,13 @@
             }
             render(u, attr, ...children) {
                 const { active, id, props } = this.props;
-                return u(
-                    'tr',
-                    {
-                        className: active ? 'TableRow active' : 'TableRow',
-                        'data-id': id
-                    },
-                    u(new TableCellComponent('#' + id)),
-                    fragment(
-                        ...props.map(
-                            (text) => u(new TableCellComponent(text))
-                        )
-                    )
-                );
+                return u`<tr 
+                    class='TableRow ${active ? 'active' : ''}' 
+                    data-id='${id}'
+                >
+                    ${u(new TableCellComponent('#' + id))   }
+                    ${props.map((text) => u(new TableCellComponent(text)))}   
+                </tr>`
             }
         }
         class TableComponent extends Component {
@@ -64,17 +50,11 @@
                 super(props);
             }
             render(u, attr, ...children) {
-                return u(
-                    'table',
-                    { className: 'Table' },
-                    u(
-                        'tbody',
-                        { id: 'tbody' },
-                        ...this.props.items.map(
-                            (item) => u(new TableRowComponent(item))
-                        ),
-                    )
-                );
+                return u`<table class='Table'>
+                    <tbody id='tbody'>
+                        ${this.props.items.map((item) => u(new TableRowComponent(item)))}
+                    </tbody>
+                </table>`;
             }
         }
         class AnimBoxComponent extends Component {
@@ -83,18 +63,18 @@
             }
             render(u, attribute, ...children) {
                 let { time, id } = this.props;
-                return u(
-                    'div',
-                    {
-                        'data-id': id,
-                        className: 'AnimBox',
-                        style: generateStyleProp({
+                return u`
+                    <div
+                        data-id='${id}',
+                        class='AnimBox',
+                        style='${generateStyleProp({
                             background: `rgba(0,0,0,${(0.5 + ((time % 10) / 10))})`,
                             'border-radius': `${(time % 10)}px`
-                        })
-                    },
-
-                )
+                        })}'
+                    >
+                        
+                    </div>
+                `;
             }
         }
         class AnimComponent extends Component {
@@ -102,15 +82,13 @@
                 super(props);
             }
             render(u, attribute, ...children) {
-                return u(
-                    'div',
-                    { className: 'Anim' },
-                    fragment(
-                        ...this.props.items.map(
+                return u`
+                    <div class='Anim'>
+                        ${this.props.items.map(
                             (item) => u(new AnimBoxComponent(item))
-                        )
-                    ),
-                )
+                        )}
+                    </div>
+                `;
             }
         }
         class TreeLeafComponent extends Component {
@@ -119,13 +97,11 @@
             }
             render(u) {
                 let { id } = this.props
-                return u(
-                    'li',
-                    {
-                        className: 'TreeLeaf',
-                        text: id,
-                    },
-                )
+                return u`
+                    <li class='TreeLeaf'>
+                        ${id}
+                    </li>
+                `;
             }
         }
         class TreeNodeComponent extends Component {
@@ -133,15 +109,11 @@
                 super(props);
             }
             render(u, attribute, ...children) {
-                return u(
-                    'ul',
-                    { className: 'TreeNode' },
-                    fragment(
-                        ...this.props.children.map(
-                            (item) => u(new (item.container ? TreeNodeComponent : TreeLeafComponent)(item))
-                        )
-                    )
-                )
+                return u`<ul class='TreeNode'>
+                    ${this.props.children.map(
+                        (item) => u(new (item.container ? TreeNodeComponent : TreeLeafComponent)(item))
+                    )}    
+                </ul>`;
             }
         }
         class TreeComponent extends Component {
@@ -149,11 +121,7 @@
                 super(props);
             }
             render(u, attribute, ...children) {
-                return u(
-                    'div',
-                    { className: 'Tree' },
-                    u(new TreeNodeComponent(this.props))
-                )
+                return u`<div class='Tree'>${u(new TreeNodeComponent(this.props))}</div>`;
             }
         }
 
@@ -181,22 +149,25 @@
                     default:
                         break;
                 }
-
-                return u(
-                    "div",
-                    { text: '#section', className: 'Main' },
-                    component
-                )
+                return u`<div class='Main'>${component}</div>`;
             }
         }
 
-        uibench.init("SchemeDom-just-append", "1.0.0");
+        uibench.init("SchemeDom-just-append", "1.0.1");
 
+        // test function
+        
+        const _clearDom = (mountDom) => {
+            const range = document.createRange();
+            range.selectNodeContents(mountDom);
+            range.deleteContents();
+        };
         document.addEventListener("DOMContentLoaded", (e) => {
             const container = document.querySelector("#App");
             let component = new MainComponent();
             uibench.run(
                 (state, mode) => {
+                    _clearDom(container)
                     component.$state = state;
                     Component.mount(container, component);
                 },

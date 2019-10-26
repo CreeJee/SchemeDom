@@ -2,7 +2,13 @@
 import {error} from './Log.js';
 
 const _extractFragment = (content) => {
-    return document.createRange().createContextualFragment(content);
+    // return document.createRange().createContextualFragment(content);
+    const o = document.createElement('template');
+    let result = null;
+    o.innerHTML = content;
+    result = o.content;
+    o.remove();
+    return result;
 };
 const _clearDom = (mountDom) => {
     const range = document.createRange();
@@ -16,6 +22,11 @@ const slotEffect = ($ref) => (value) => {
     _clearDom($ref);
     // TODO : 달라진 ref한정으로 변경
     $ref.appendChild(_extractFragment(value.join('')));
+};
+const fragmentEffect = ($ref) => (fragment) => {
+    _clearDom($ref);
+    // TODO : 달라진 ref한정으로 변경
+    $ref.appendChild(fragment);
 };
 const textEffect = ($ref) => (value) => {
     $ref.data = value;
@@ -172,34 +183,26 @@ const Effect = class Effect {
         this.uid = -1;
     }
 };
-export const create = (mountZone)=> (templateGroup, ...mutationVariable) => {
+
+export const create = (templateGroup, ...mutationVariable) => {
     const [startAt, ...others] = templateGroup;
     const mutationSize = mutationVariable.length;
-    const mutationGroup = [];
-
-    let child = null;
     let content = startAt;
-    let _walker = null;
-    let _nextNode = null;
-
-
     for (let nth = 0; nth < mutationSize; nth++) {
         const currentString = others[nth];
         content += Effect.generate(mutationVariable[nth]) + currentString;
     }
-    _clearDom(mountZone);
-    mountZone.appendChild(_extractFragment(content));
-    child = mountZone.childNodes[mountZone.childElementCount-1];
-    // 구조상 모순이 안날라면 여시점에서 append가 되고
-    // 그 상단의 ref로 부터 walker로 순회하며 attach 하고 참조상의 이득을 바야함
-    _walker = document.createTreeWalker(
-        child,
+    return _extractFragment(content);
+};
+export const bind = (element) => {
+    const mutationGroup = [];
+    const _walker = document.createTreeWalker(
+        element,
         NodeFilter.SHOW_ALL,
         null,
         false
     );
-    // 이론상 fragment를 뿌리고 walker를 돌아야되나
-    // 으쉣
+    let _nextNode = null;
     while (_nextNode = _walker.nextNode()) {
         let uid = NaN;
         let attributes = null;
@@ -212,7 +215,11 @@ export const create = (mountZone)=> (templateGroup, ...mutationVariable) => {
             for (let index = 0; index < attributeSize; index++) {
                 const {name, value} = attributes[index];
                 uid = Effect.unMark(value);
-                _invokeAttach(mutationGroup, uid, () => attributeEffect(_nextNode, name));
+                _invokeAttach(
+                    mutationGroup,
+                    uid,
+                    () => attributeEffect(_nextNode, name)
+                );
             }
             break;
         case Node.TEXT_NODE:
@@ -223,28 +230,25 @@ export const create = (mountZone)=> (templateGroup, ...mutationVariable) => {
                 ({value}) => (
                     value instanceof Array ?
                         slotEffect(_nextNode.parentNode) :
-                        textEffect(_nextNode)
+                        value instanceof DocumentFragment ?
+                            fragmentEffect(_nextNode.parentNode) :
+                            textEffect(_nextNode)
                 )
             );
             break;
         }
     }
-    child.group = mutationGroup;
-    return child;
+    element.group = mutationGroup;
+    return element;
 };
 export const update = (createdNode) => (unusedGroup, ...mutationGroup) => {
     const prevGroup = createdNode.group;
     const createdSize = prevGroup.length;
     if (createdSize !== mutationGroup.length) {
-        error('Non accessable mutation dected');
+        throw error('Non accessable mutation dected');
     }
-    for (let index = 0; index < createdSize.length; index++) {
-        Effect.get(createdSize[index]).notify(mutationGroup[index]);
+    for (let index = 0; index < createdSize; index++) {
+        Effect.get(prevGroup[index]).notify(mutationGroup[index]);
     }
 };
-// window.start = performance.now();
-// window.result = u`<div class='group' id='${2}'>
-//     <span>${1}</span>
-//     ${Array.from({length: 10000}).fill('').map((v, k) => `<span>${k}</span>`)}
-// </div>`;
-// console.log(performance.now() - window.start);
+window._effect_ = Effect.watch;

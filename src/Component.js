@@ -1,20 +1,22 @@
-// add component dom cloning
-// or
-// auto merge component
-
-//
 import {FixedType} from './core/FixedType.js';
 import {BaseComponent} from './core/BaseComponent.js';
-import {create, update} from './core/VNode.js';
-
+import {create, bind, update} from './core/VNode.js';
+const componentOrElement = (mountDom, handler) => (
+    (componentOrString, ...effect) => {
+        return componentOrString instanceof BaseComponent ?
+            renderDom(mountDom, componentOrString) :
+            typeof handler === 'function' ?
+                handler(componentOrString, ...effect):
+                bind(create(componentOrString, ...effect));
+    }
+);
 export const renderDom = function(mountDom, component) {
-    const res = component.render(
-        create(mountDom), component.props, component.slots
+    return component.render(
+        componentOrElement(mountDom, false),
+        component.props,
+        ...component.slots
     );
-    component._zone = mountDom;
-    component.$vNode = res;
 };
-
 /**
  *
  *
@@ -37,7 +39,8 @@ class Component extends BaseComponent {
      */
     static mount(mountDom, component) {
         // 효과적인 dom튜닝방법을 찾을것
-        renderDom(mountDom, component);
+        component.$vNode = renderDom(mountDom, component);
+        mountDom.appendChild(component.$vNode);
         return this;
     }
     /**
@@ -46,9 +49,8 @@ class Component extends BaseComponent {
      * @return {Element}
      */
     mutation(props) {
-        renderDom(this.$zone, this, update(this.$vNode));
         this.render(
-            update(this.$vNode),
+            componentOrElement(null, update(this.$vNode)),
             this.props,
             this.slots
         );

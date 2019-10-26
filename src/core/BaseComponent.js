@@ -4,16 +4,9 @@ export const BaseComponent = class BaseComponent {
      * @param {Object} props
      */
     constructor(props = {}) {
-        this.$parent = null;
         this.$vNode = null;
         this.props = props;
-    }
-    /**
-     * component appendRef
-     * @readonly
-     */
-    get $zone() {
-        return this.$parent === null ? this._zone : this.$parent.$vNode.$ref;
+        this.slots = [];
     }
     /**
      * render

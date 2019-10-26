@@ -16,14 +16,19 @@
     
         window.start = performance.now();
         window.end = 0;
+        class ListComponent extends Component{
+            
+            render(u, props){
+                return u`${props.map((_, i) => `<li>${i}</li>`)}`
+            }
+        }
         class TestComponent extends ObserveComponent{
             constructor(){
                 super($state);
             }
             render(u) {
-                const renderArray = Array.from({ length: this.$state.count }, (v) => "");
                 return u`<ul>
-                    ${renderArray.map((_, i) => `<li>${i}</li>`)}
+                    ${u(new ListComponent(Array.from({ length: this.$state.count }, (v) => "")))}
                 </ul>`;
             }
         }
@@ -32,7 +37,7 @@
             document.querySelector("#app"),
             root
         );
-        $state.set({count : 10});
+        // $state.set({count : 10});
         window.end = performance.now();
         console.log(window.end-window.start);
     </script>
