@@ -5,11 +5,10 @@ const createContextualFragment = (html) => {
     div.innerHTML = html;
     return div.children[0]; // so hokey it's not even funny
 };
-
+let rangeGroup = [];
 Range.prototype.createContextualFragment = (
     (html) => createContextualFragment(html)
 );
-
 // HACK: Polyfil that allows codemirror to render in a JSDOM env.
 // global.window.document.createRange = function createRange() {
 //     return {
@@ -35,7 +34,16 @@ global.document.createRange = () => ({
         nodeName: 'BODY',
         ownerDocument: document,
     },
-    selectNodeContents: (nodes) => {
-        debugger;
-    }
+    selectNodeContents: (node) => {
+        if (!(node instanceof Node)) {
+            throw new Error('must elements');
+        }
+        rangeGroup = Array.from(node.childNodes);
+    },
+    deleteContents: ()=> {
+        for (const node of rangeGroup) {
+            node.remove();
+        }
+        rangeGroup = [];
+    },
 });
