@@ -11,7 +11,7 @@
     <script type="module">
         import { create, bind, update, Effect } from "../../src/core/VNode.js";
         const createEach = (v) => bind(create`<li>${v}</li>`);
-        const createChild = (size) => bind(create`<ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul>`);
+        const createChild = (size) => bind(create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`);
 
         // const $variable = 1;
         // const $ref1 = bind(create`<p>${$variable}</p>`);
