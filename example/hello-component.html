@@ -8,12 +8,12 @@
         import { Component } from "../../src/Component.js";
         class testComponent extends Component{
             render(u,{text},...children){
-                return u("h1",{text: 'Hello World'},...children)
+                return u`<h1>Hello World</h1>`;
             }
         }
         Component.mount(
             document.querySelector("#app"),
-            testComponent
+            new testComponent()
         );
     </script>
 </body>

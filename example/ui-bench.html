@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://localvoid.github.io/uibench-base/0.1.0/styles.css">
+</head>
+
+<body>
+    <div id="App"></div>
+    <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
+    <script type="module">
+        import { Component } from "../src/Component.js";
+        import { State } from "../src/State.js";
+        import { ObserveComponent } from "../src/ObserveComponent.js";
+
+        const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
+        class TableCellComponent extends Component {
+            constructor(text) {
+                super();
+                this.text = text;
+            }
+            render(u) {
+                const { text } = this;
+                const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
+                debugger;
+                $dom.addEventListener('click',() => console.log("Click", text));
+                return $dom;
+            }
+        }
+        class TableRowComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attr, ...children) {
+                const { active, id, props } = this.props;
+                return u`<tr 
+                    class='TableRow ${active ? 'active' : ''}' 
+                    data-id='${id}'
+                >
+                    ${u(new TableCellComponent('#' + id))   }
+                    ${props.map((text) => u(new TableCellComponent(text)))}   
+                </tr>`
+            }
+        }
+        class TableComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attr, ...children) {
+                debugger;
+                return u`<table class='Table'>
+                    <tbody id='tbody'>
+                        ${this.props.items.map((item) => u(new TableRowComponent(item)))}
+                    </tbody>
+                </table>`;
+            }
+        }
+        class AnimBoxComponent extends Component {
+            constructor($state) {
+                super($state);
+            }
+            render(u, attribute, ...children) {
+                let { time, id } = this.props;
+                return u`
+                    <div
+                        data-id='${id}',
+                        class='AnimBox',
+                        style='${generateStyleProp({
+                            background: `rgba(0,0,0,${(0.5 + ((time % 10) / 10))})`,
+                            'border-radius': `${(time % 10)}px`
+                        })}'
+                    >
+                        
+                    </div>
+                `;
+            }
+        }
+        class AnimComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attribute, ...children) {
+                return u`
+                    <div class='Anim'>
+                        ${this.props.items.map(
+                            (item) => u(new AnimBoxComponent(item))
+                        )}
+                    </div>
+                `;
+            }
+        }
+        class TreeLeafComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u) {
+                let { id } = this.props
+                return u`
+                    <li class='TreeLeaf'>
+                        ${id}
+                    </li>
+                `;
+            }
+        }
+        class TreeNodeComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attribute, ...children) {
+                return u`<ul class='TreeNode'>
+                    ${this.props.children.map(
+                        (item) => u(new (item.container ? TreeNodeComponent : TreeLeafComponent)(item))
+                    )}    
+                </ul>`;
+            }
+        }
+        class TreeComponent extends Component {
+            constructor(props) {
+                super(props);
+            }
+            render(u, attribute, ...children) {
+                return u`<div class='Tree'>${u(new TreeNodeComponent(this.props))}</div>`;
+            }
+        }
+
+
+        class MainComponent extends Component {
+            constructor() {
+                super();
+                this.$state = {};
+            }
+            render(u, { text }, ...children) {
+                const { $state } = this;
+
+                let component = null;
+                let { location } = $state;
+                switch (location) {
+                    case 'table':
+                        component = u(new TableComponent($state.table))
+                        break;
+                    case 'anim':
+                        component = u(new AnimComponent($state.anim))
+                        break;
+                    case 'tree':
+                        component = u(new TreeComponent($state.tree.root))
+                        break;
+                    default:
+                        break;
+                }
+                return u`<div class='Main'>${component}</div>`;
+            }
+        }
+
+        uibench.init("SchemeDom-just-append", "1.0.1");
+
+        // test function
+        
+        const _clearDom = (mountDom) => {
+            const range = document.createRange();
+            range.selectNodeContents(mountDom);
+            range.deleteContents();
+        };
+        document.addEventListener("DOMContentLoaded", (e) => {
+            const container = document.querySelector("#App");
+            let component = new MainComponent();
+            uibench.run(
+                (state, mode) => {
+                    _clearDom(container)
+                    component.$state = state;
+                    Component.mount(container, component);
+                },
+                (samples) => {
+                    document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";
+                }
+            );
+        });
+    </script>
+</body>
+
+</html>

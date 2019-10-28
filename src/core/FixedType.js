@@ -10,7 +10,7 @@ const TypeTable = class TypeTable extends Map {
 const JUST_VALUE_CONFIG = Object.freeze({
     enumerable: false,
     configurable: false,
-    writable: false
+    writable: false,
 });
 /**
  *
@@ -56,7 +56,7 @@ const justValueProp = (target, prop, value) => {
         {},
         JUST_VALUE_CONFIG,
         {
-            value
+            value,
         }
     ));
     return target;
@@ -76,7 +76,7 @@ const justValueProps = (target, obj) => {
                     {},
                     JUST_VALUE_CONFIG,
                     {
-                        value: obj[k]
+                        value: obj[k],
                     }
                 );
                 return accr;
@@ -113,7 +113,7 @@ const expectHandler = (instance) => ({
     construct: (target, args, newTarget) => {
         instance.search(newTarget, ...args);
         return Reflect.construct(target, args, newTarget);
-    }
+    },
 });
 /**
  * property handler
@@ -124,7 +124,7 @@ const propertyHandler = (instance) => ({
     set: (obj, prop, value) => {
         instance.search(instance.initProp(obj, prop), value);
         return Reflect.set(obj, prop, value);
-    }
+    },
 });
 /**
  * fixed type method then expect
@@ -151,7 +151,7 @@ const expect = (name, handler, value, ...args) => {
         justValueProps(
             value, {
                 [TypeListSymbol]: new TypeTable(),
-                [name]: expectBinder.bind(value, name, handler, value)
+                [name]: expectBinder.bind(value, name, handler, value),
             }
         );
     }
@@ -309,7 +309,7 @@ class FixedType {
                 FixedTypeOr,
                 FixedTypeAny,
                 FixedTypeArray,
-                FixedTypeInstanceOf
+                FixedTypeInstanceOf,
             ],
         });
         return this;
@@ -357,6 +357,7 @@ class FixedType {
     *
     */
     static expect(func, ...args) {
+        // eslint-disable-next-line jest/valid-expect
         return expect('expect', expectHandler(this.Instance), func, ...args);
     }
 
@@ -377,6 +378,7 @@ class FixedType {
     static property(refObject, ...args) {
         return expect(
             'expect',
+            // eslint-disable-next-line jest/valid-expect
             propertyHandler(this.Instance),
             refObject,
             ...args
@@ -510,5 +512,5 @@ export {
     fixedTypeAny as FixedTypeAny,
     FixedTypeArray,
     FixedTypeSpread,
-    FixedTypeOr
+    FixedTypeOr,
 };

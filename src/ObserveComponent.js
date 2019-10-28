@@ -1,21 +1,7 @@
 import Component from './Component.js';
 import {State} from './State.js';
 import FixedType from './core/FixedType.js';
-/**
- * @private
- * @param {Component} component
- * @param {Object} props
- * @description observeComponent lifecycle private util
- */
-const _updated = async (component, props)=>{
-    const slots = component.$slots;
-    if (component.isUpdated(props)) {
-        await component.mutation(
-            await component.deliveredProps(props),
-            slots
-        );
-    }
-};
+
 /**
  * ObserveComponent
  */
@@ -29,15 +15,29 @@ class ObserveComponent extends Component {
             throw new Error('need initalized State');
         }
         this.$state = $state;
-        $state.observe(_updated.bind(null, this));
+        $state.addEvent(this._updated.bind(this));
     }
     /**
-     * when needs mutation check
-     * @param {Object} props
-     * @return {Boolean}
+     * @description use safe mutation props
+     * @param {Function} next async next handler
+     * @param {State} state
      */
-    isUpdated(props = {}) {
-        return true;
+    deliveredProps(next, state) {
+        next(state);
+    }
+    /**
+    * @private
+    * @param {Object} props
+    * @description observeComponent lifecycle private util
+    */
+    _updated(props) {
+        if (this.isUpdated(props)) {
+            this.props = props;
+            this.deliveredProps(
+                this.mutation.bind(this),
+                props
+            );
+        }
     }
 }
 const ProxyedConstruct = FixedType.expect(

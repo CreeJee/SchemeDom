@@ -1,12 +1,14 @@
-export const BaseComponent = class baseComponent {
+export const BaseComponent = class BaseComponent {
     /**
      * Base Component
+     * @param {Object} props
      */
-    constructor({...props} = {}) {
+    constructor(props = {}) {
         this.$vNode = null;
-        this.$zone = null;
-        this.$props = props;
-        this.$slots = [];
+        this.props = props;
+        this.slots = [];
+
+        this.$update = ()=>{};
     }
     /**
      * render

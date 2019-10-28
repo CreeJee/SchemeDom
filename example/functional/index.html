@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>routing Example</title>
+</head>
+<body>
+    <section id="router"></section>
+    <script type="module">
+        import { create, bind, update, Effect } from "../../src/core/VNode.js";
+        const createEach = (v) => bind(create`<li>${v}</li>`);
+        const createChild = (size) => bind(create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`);
+
+        // const $variable = 1;
+        // const $ref1 = bind(create`<p>${$variable}</p>`);
+        // const $ref2 = bind(create`<p>${$ref1}</p>`);
+        // const $ref3 = bind(create`<div>${$ref2}</div>`)
+        // const resource = Effect.get(0);
+
+        // document.body.appendChild($ref3);
+        // resource.notify(10);
+
+        const $refGroup = bind(create`<div>
+            ${createChild(5)}   
+            ${createChild(5)}
+        </div>`);
+        document.body.appendChild($refGroup);
+        Effect.get(0).notify(10);
+        Effect.get(11).notify([bind(create`<span>M</span>`)]);
+        
+    </script>
+</body>
+</html>

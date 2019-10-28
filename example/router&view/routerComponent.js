@@ -1,8 +1,9 @@
 import {State} from '../../src/State.js';
 import {ObserveComponent} from '../../src/ObserveComponent.js';
 import Component from '../../src/Component.js';
+// TODO: route match;
+export const $state = new State({path: '/', routes: []});
 
-export const $state = new State({path: '/'});
 /**
  * Router Class
  */
@@ -11,11 +12,7 @@ export class RouterComponent extends ObserveComponent {
      * default route path
      * @param {String} path
      */
-    constructor(path) {
-        if (!path) {
-            throw new TypeError('path is must string');
-        }
-        $state.set({path});
+    constructor() {
         super($state);
     }
     /**
@@ -25,14 +22,13 @@ export class RouterComponent extends ObserveComponent {
      * @return {HTMLElement}
      */
     render(u, {$currentView, ...props}, ...children) {
-        return ($currentView instanceof Component) ?
-            $currentView.render(u, props, ...children) :
-            u('span', {text: 404}, ...children);
+        return u`${$currentView ? u($currentView) : u`<span>404</span>`}`;
     }
     /**
+     * @param {Function} next
      * @param {Object} props
      */
-    async deliveredProps(props) {
+    async deliveredProps(next, props) {
         let path = this.$state.path;
         if (typeof path !== 'string' || path[0] !== '/') {
             throw new Error('path contains root path');
@@ -40,6 +36,33 @@ export class RouterComponent extends ObserveComponent {
             path = '/index';
         }
         const ViewConstruct = (await import(`./views${path}.js`)).default;
-        return {$currentView: new ViewConstruct(props)};
+        next({$currentView: new ViewConstruct(props)});
+    }
+    // /**
+    //  * @memberof RouterComponent
+    //  * @return {DocumentFragment}
+    //  */
+    // mutation({$currentView, ...props}) {
+    //     // flushing
+    //     debugger;
+    //     return this.$update($currentView);
+    // }
+    /**
+     * router push
+     *
+     * @param {*} path
+     * @memberof RouterComponent
+     */
+    push(path) {
+        this.$state.set({path});
+    }
+    /**
+     * redirect push
+     *
+     * @param {*} path
+     * @memberof RouterComponent
+     */
+    redirect(path) {
+        this.$state.put({path});
     }
 }

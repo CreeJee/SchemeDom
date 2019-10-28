@@ -2,14 +2,18 @@ import {FixedType} from './core/FixedType.js';
 const reflectState = new Map();
 const _eventHandlersSymbol = Symbol('$$attachHandlers');
 const _baseStateSymbol = Symbol('$$baseState');
-
+const __StoreType = Map;
+const generateInnerStore = (entry) => new __StoreType(entry);
+// remove proxy memory leak
 const stateProxyHandler = {
-    get: (o, prop, receiver)=>(
-        Reflect.has(o, prop) ?
+    get: (o, prop, receiver) => {
+        return Reflect.has(o, prop) ?
             Reflect.get(o, prop, receiver) :
-            o[_baseStateSymbol].get(prop)
-    ),
+            o[_baseStateSymbol].get(prop);
+    },
+    // proxy hook
     apply: Reflect.apply,
+    has: (o, prop) => o[_baseStateSymbol].has(prop),
 };
 
 /**
@@ -33,44 +37,55 @@ class State {
      * @param {Any} key
      */
     constructor(initState = {}, key = this) {
-        this[_baseStateSymbol] = new Map(Object.entries(initState));
+        this[_baseStateSymbol] = generateInnerStore(Object.entries(initState));
         this[_eventHandlersSymbol] = [];
-        this.history = [this[_baseStateSymbol]];
         reflectState.set(key, this);
         return new Proxy(this, stateProxyHandler);
     }
     /**
      * @memberof State
      * @param {Any} value
-     * @return {Any} returns value`
+     * @return {Any} returns value
      */
-    async set(value) {
+    set(value) {
         this.forceSet(value);
         for (const observer of this[_eventHandlersSymbol]) {
-            await observer(value);
+            observer(value);
         }
         return value;
     }
-    forceSet(value){
-        this[_baseStateSymbol] = new Map(Object.entries(value));
-        this.history.push(this[_baseStateSymbol]);
+    /**
+     * force set value for state
+     * @param {State} value
+     * @memberof State
+     */
+    forceSet(value) {
+        this[_baseStateSymbol] = (
+            value instanceof __StoreType ?
+                value :
+                generateInnerStore(Object.entries(value))
+        );
     }
     /**
+     * add event
      * @param {Function} observer
      * @return {State}
      */
-    observe(observer) {
-        this[_eventHandlersSymbol].push(observer);
+    addEvent(observer) {
+        const events = this[_eventHandlersSymbol];
+        if (!events.includes(observer)) {
+            this[_eventHandlersSymbol].push(observer);
+        }
         return this;
     }
     /**
+     * remove event
+     * @param {Function} observer
      * @memberof State
-     * @description rollback State
-     * @return {Promise<State>};
      */
-    revert() {
-        [this[_baseStateSymbol]] = this.history.splice(-1, 1);
-        return this;
+    removeEvent(observer) {
+        const events = this[_eventHandlersSymbol];
+        events.splice(events.indexOf(observer), 1);
     }
 }
 const ProxyConstructor = FixedType.expect(
