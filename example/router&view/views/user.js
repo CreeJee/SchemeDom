@@ -4,19 +4,17 @@ import {Component} from '../../../src/Component.js';
  */
 export default class User extends Component {
     /**
-     * @param {Component.fragment} u
-     * @return {VNode}
+     * @param {VNode.create} u
+     * @return {DocumentFragment}
      */
     render(u) {
-        return Component.fragment(
-            u('nav', {},
-                u('ul', {},
-                    u('li', {},
-                        u('a', {text: 'main', href: './a'})
-                    )
-                )
-            ),
-            u('h1', {text: 'userPage'})
-        );
+        return u`
+            <nav>
+                <ul>
+                    <li><a href="./a">main</a></li>
+                </ul>   
+            </nav>
+            <h1>user</h1>
+        `;
     }
 }

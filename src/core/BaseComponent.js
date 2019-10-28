@@ -7,6 +7,8 @@ export const BaseComponent = class BaseComponent {
         this.$vNode = null;
         this.props = props;
         this.slots = [];
+
+        this.$update = ()=>{};
     }
     /**
      * render

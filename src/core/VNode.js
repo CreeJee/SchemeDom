@@ -18,31 +18,44 @@ const _clearDom = (mountDom) => {
 const attributeEffect = ($ref, attributeName) => (value) => {
     $ref.attributes[attributeName].value = value;
 };
-const slotEffect = ($ref) => (value) => {
+const slotEffect = ($ref, $self) => (value) => {
+    const fragment = document.createDocumentFragment();
     _clearDom($ref);
-    // TODO : 달라진 ref한정으로 변경
-    $ref.appendChild(_extractFragment(value.join('')));
+    // TODO : 달라진 ref한정으로
+    for (let slot of value) {
+        switch (slot.nodeType) {
+        case Node.DOCUMENT_FRAGMENT_NODE:
+            break;
+        default:
+            slot = _extractFragment(slot);
+        }
+        fragment.append(slot);
+    }
+    $ref.appendChild(fragment);
 };
-const fragmentEffect = ($ref) => (fragment) => {
-    _clearDom($ref);
-    // TODO : 달라진 ref한정으로 변경
+const fragmentEffect = ($ref, $self) => (fragment, effect) => {
+    // tricky solution
+    if ($self.nodeValue !== '') {
+        $self.nodeValue = '';
+    }
     $ref.appendChild(fragment);
 };
 const textEffect = ($ref) => (value) => {
-    $ref.data = value;
+    $ref.nodeValue = value;
 };
 const _invokeAttach = (groupRef, uid, findEffect) => {
     if (!isNaN(uid)) {
         const effect = Effect.get(uid);
-        const attachFunctor = findEffect(effect, findEffect);
-        attachFunctor(effect.value);
+        const attachFunctor = findEffect(effect);
+        attachFunctor(effect.value, effect);
         effect.attach(attachFunctor);
         groupRef.push(uid);
     }
 };
 
-const Effect = class Effect {
+export const Effect = class Effect {
     static watch = [];
+    static KEYED_SYMBOL = '$';
     // vaild,mark가 쌍으로 매칭되야하는데 이때 이걸 어캐 메칭해야 자알메칭했다고 할끄아
     /**
      * @memberof Effect
@@ -52,7 +65,7 @@ const Effect = class Effect {
      */
     static vaildExpr(expr) {
         const len = expr.length;
-        return expr[0] === '#' && expr[1] === '[' && expr[len - 1] === ']';
+        return expr[0] === this.KEYED_SYMBOL && expr[1] === '[' && expr[len - 1] === ']';
     }
     /**
      * @memberof Effect
@@ -71,7 +84,7 @@ const Effect = class Effect {
      * @return {String}
      */
     static mark(uid) {
-        return `#[${uid}]`;
+        return `${this.KEYED_SYMBOL}[${uid}]`;
     }
     /**
      *
@@ -101,11 +114,19 @@ const Effect = class Effect {
      */
     static unMarkExpression(expr) {
         let uid = -1;
-        if (uid = this.unMark()) {
+        if (uid = this.unMark(expr)) {
             return this.watch[uid].value;
         } else {
             throw new Error('error unwrapping');
         }
+    }
+    /**
+     * @param {String} expr
+     * @return {Array<Effect>}
+     */
+    static unMarkGroup(expr) {
+        const exprGroup = expr.split(this.KEYED_SYMBOL).slice(1);
+        return exprGroup.map((uid)=>this.unMark(`${this.KEYED_SYMBOL}${uid}`));
     }
     /**
      * attach handler
@@ -127,7 +148,7 @@ const Effect = class Effect {
         return this.vaildUid(uid) ? this.watch[uid] : null;
     }
     /**
-     *Creates an instance of Effect.
+     * Creates an Effect.
      * @param {any} v
      */
     constructor(v) {
@@ -190,7 +211,8 @@ export const create = (templateGroup, ...mutationVariable) => {
     let content = startAt;
     for (let nth = 0; nth < mutationSize; nth++) {
         const currentString = others[nth];
-        content += Effect.generate(mutationVariable[nth]) + currentString;
+        const currentVariable = mutationVariable[nth];
+        content += Effect.generate(currentVariable) + currentString;
     }
     return _extractFragment(content);
 };
@@ -204,7 +226,6 @@ export const bind = (element) => {
     );
     let _nextNode = null;
     while (_nextNode = _walker.nextNode()) {
-        let uid = NaN;
         let attributes = null;
         let attributeSize = -1;
 
@@ -214,7 +235,7 @@ export const bind = (element) => {
             attributeSize = attributes.length;
             for (let index = 0; index < attributeSize; index++) {
                 const {name, value} = attributes[index];
-                uid = Effect.unMark(value);
+                const uid = Effect.unMark(value);
                 _invokeAttach(
                     mutationGroup,
                     uid,
@@ -223,18 +244,24 @@ export const bind = (element) => {
             }
             break;
         case Node.TEXT_NODE:
-            uid = Effect.unMark(_nextNode.data.trim());
-            _invokeAttach(
-                mutationGroup,
-                uid,
-                ({value}) => (
-                    value instanceof Array ?
-                        slotEffect(_nextNode.parentNode) :
-                        value instanceof DocumentFragment ?
-                            fragmentEffect(_nextNode.parentNode) :
-                            textEffect(_nextNode)
-                )
-            );
+            // we will need multiple Effect
+            {
+                _nextNode.nodeValue = _nextNode.nodeValue.replace(/[\r\n\s]+/g, '');
+                const group = Effect.unMarkGroup(_nextNode.nodeValue);
+                for (const uid of group) {
+                    _invokeAttach(
+                        mutationGroup,
+                        uid,
+                        ({value}) => {
+                            return value instanceof Array ?
+                                slotEffect(_nextNode.parentNode, _nextNode) :
+                                value instanceof DocumentFragment ?
+                                    fragmentEffect(_nextNode.parentNode, _nextNode) :
+                                    textEffect(_nextNode);
+                        }
+                    );
+                }
+            }
             break;
         }
     }
@@ -251,4 +278,3 @@ export const update = (createdNode) => (unusedGroup, ...mutationGroup) => {
         Effect.get(prevGroup[index]).notify(mutationGroup[index]);
     }
 };
-window._effect_ = Effect.watch;

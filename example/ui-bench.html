@@ -26,6 +26,7 @@
             render(u) {
                 const { text } = this;
                 const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
+                debugger;
                 $dom.addEventListener('click',() => console.log("Click", text));
                 return $dom;
             }
@@ -50,6 +51,7 @@
                 super(props);
             }
             render(u, attr, ...children) {
+                debugger;
                 return u`<table class='Table'>
                     <tbody id='tbody'>
                         ${this.props.items.map((item) => u(new TableRowComponent(item)))}

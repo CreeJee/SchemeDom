@@ -22,7 +22,7 @@ export class RouterComponent extends ObserveComponent {
      * @return {HTMLElement}
      */
     render(u, {$currentView, ...props}, ...children) {
-        return u('span', {text: 404}, ...children);
+        return u`${$currentView ? u($currentView) : u`<span>404</span>`}`;
     }
     /**
      * @param {Function} next
@@ -38,13 +38,15 @@ export class RouterComponent extends ObserveComponent {
         const ViewConstruct = (await import(`./views${path}.js`)).default;
         next({$currentView: new ViewConstruct(props)});
     }
-    /**
-     * @memberof RouterComponent
-     */
-    mutation({$currentView, ...props}) {
-        // flushing
-        Component.mount(this.$zone, $currentView);
-    }
+    // /**
+    //  * @memberof RouterComponent
+    //  * @return {DocumentFragment}
+    //  */
+    // mutation({$currentView, ...props}) {
+    //     // flushing
+    //     debugger;
+    //     return this.$update($currentView);
+    // }
     /**
      * router push
      *

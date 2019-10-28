@@ -14,7 +14,7 @@ export const renderDom = function(mountDom, component) {
     return component.render(
         componentOrElement(mountDom, false),
         component.props,
-        ...component.slots
+        component.slots
     );
 };
 /**
@@ -40,6 +40,7 @@ class Component extends BaseComponent {
     static mount(mountDom, component) {
         // 효과적인 dom튜닝방법을 찾을것
         component.$vNode = renderDom(mountDom, component);
+        component.$update = componentOrElement(mountDom, update(component.$vNode));
         mountDom.appendChild(component.$vNode);
         return this;
     }
@@ -50,8 +51,8 @@ class Component extends BaseComponent {
      */
     mutation(props) {
         this.render(
-            componentOrElement(null, update(this.$vNode)),
-            this.props,
+            this.$update,
+            Object.assign(this.props, props),
             this.slots
         );
         return this;
