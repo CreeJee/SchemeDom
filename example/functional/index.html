@@ -9,7 +9,7 @@
 <body>
     <section id="router"></section>
     <script type="module">
-        import { create, bind, update, Effect } from "../../src/core/VNode.js";
+        import { create, bind, update, remove, Effect } from "../../src/core/VNode.js";
         const createEach = (v) => bind(create`<li>${v}</li>`);
         const createChild = (size) => bind(create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`);
 
@@ -22,13 +22,15 @@
         // document.body.appendChild($ref3);
         // resource.notify(10);
 
-        const $refGroup = bind(create`<div>
+        const $refChild = createChild(10);
+        const $$updateRef = update($refChild);
+        const $refGroup = bind(create`<div class='root'>
             ${createChild(5)}   
-            ${createChild(5)}
+            ${$refChild}
         </div>`);
         document.body.appendChild($refGroup);
-        Effect.get(0).notify(10);
-        Effect.get(11).notify([bind(create`<span>M</span>`)]);
+        update($refChild)`<ul>${[createEach(30)]}</ul>`
+        remove($refChild);
         
     </script>
 </body>

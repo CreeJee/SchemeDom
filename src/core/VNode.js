@@ -21,7 +21,9 @@ const attributeEffect = ($ref, attributeName) => (value) => {
 const slotEffect = ($ref, $self) => (value) => {
     const fragment = document.createDocumentFragment();
     _clearDom($ref);
-    // TODO : 달라진 ref한정으로
+    if (!Array.isArray(value)) {
+        value = [];
+    }
     for (let slot of value) {
         switch (slot.nodeType) {
         case Node.DOCUMENT_FRAGMENT_NODE:
@@ -266,6 +268,7 @@ export const bind = (element) => {
         }
     }
     element.group = mutationGroup;
+    element.fragment = Array.from(element.childNodes);
     return element;
 };
 export const update = (createdNode) => (unusedGroup, ...mutationGroup) => {
@@ -277,4 +280,20 @@ export const update = (createdNode) => (unusedGroup, ...mutationGroup) => {
     for (let index = 0; index < createdSize; index++) {
         Effect.get(prevGroup[index]).notify(mutationGroup[index]);
     }
+};
+
+export const remove = (createdNode) => {
+    const {group, fragment} = createdNode;
+    let len = -1;
+    if (!Array.isArray(group)) {
+        throw error('first argument is not VNode');
+    }
+    len = group.length;
+    for (let index = 0; index < len; index++) {
+        Effect.get(group[index]).remove();
+    }
+    for (const node of fragment) {
+        node.remove();
+    }
+    // TODO: remove created top dom
 };
