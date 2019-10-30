@@ -1,169 +1,71 @@
-import ObserveComponent from '../src/ObserveComponent.js';
-import Component from '../src/Component.js';
 import State from '../src/State.js';
-/**
- * o;
- */
-class ComponentMock extends Component {
-    /**
-     * mock render
-     * @param {elementGeneractor} u
-     * @return {HTMLElement|DocumentFragment}
-     */
-    render(u) {
-        return u`<span></span>`;
-    }
-}
-/**
- * mock observeClass
- */
-class ObserveMock extends ObserveComponent {
-    /**
-     * @param {State} $state
-     */
-    constructor($state) {
-        super($state);
-    }
-    /**
-     * mock observe render
-     * @param {elementGeneractor} u
-     * @return {HTMLElement|DocumentFragment}
-     */
-    render(u) {
-        return u`<span>${this.$state.text}</span>`;
-    }
-}
-/**
- * class
- */
-class ChildrenMock extends Component {
-    /**
-     * @param {elementGeneractor} u
-     * @return {HTMLElement}
-     */
-    render(u) {
-        return u`<ul><li></li></ul>`;
-    }
-}
-/**
- * test 4
- */
-class ObserveChildMock extends ObserveComponent {
-    /**
-     * @param {State} $state
-     */
-    constructor($state) {
-        super($state);
-    }
-    /**
-     * mock observe render
-     * @param {elementGeneractor} u
-     * @return {HTMLElement|DocumentFragment}
-     */
-    render(u) {
-        const childState = this.$state.list;
-        if (!Array.isArray(childState)) {
-            throw new Error('need $state.list');
-        }
-        return u`<ul>${childState.map((i)=>`<li>${i}</li>`)}</ul>`;
-    }
-}
-/**
- * testChild
- */
-class TestChild extends Component {
-    /**
-     * constructor
-     * @param {Object} props
-     */
-    constructor(props) {
-        super();
-        this.props = props;
-    }
-    /**
-     * @param {VNode.create} h
-     * @param {Object} props
-     * @param {Array} slots
-     * @return {Fragment}
-     */
-    render(h, props, slots) {
-        return h`<span>${props.key}</span>`;
-    }
-}
-/**
- * test6
- */
-class Test6 extends Component {
-    /**
-     * constructor
-     */
-    constructor() {
-        super();
-    }
-    /**
-     * @param {VNode.create} h
-     * @param {Object} props
-     * @param {Array} slots
-     * @return {Fragment}
-     */
-    render(h, props, slots) {
-        return h`<div><p>
-            ${[1, 2].map((key)=>h(new TestChild({key})))}
-            ${[3, 4].map((key)=>h(new TestChild({key})))}
-        </p></div>`;
-    }
-}
+import {VNode} from '../index.js';
+const {create, bind, update, remove, Effect} = VNode;
 
 
-test('element render', () => {
-    const o = new ComponentMock();
-    Component.mount(document.body, o);
-    expect(document.body.innerHTML).toEqual('<span></span>');
-    document.body.innerHTML = '';
+const $zone = document.body;
+let result = '';
+test('create render', () => {
+    $zone.append(create`<span></span>`);
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual('<span></span>');
 });
-test('nested observe render', (done) => {
-    const $mockState = new State();
-    const o = new ObserveMock($mockState);
-    Component.mount(document.body, o);
-    $mockState.set({text: 'yellow'});
-    expect(document.body.innerHTML).toEqual('<span>yellow</span>');
-    document.body.innerHTML = '';
+test('update render', (done) => {
+    const $ref = bind(create`<span>${''}</span>`);
+    const $$updater = update($ref);
+    $zone.appendChild($ref);
+    $$updater`<span>${'yellow'}</span>`;
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual('<span>yellow</span>');
     done();
 });
-test('children render', ()=>{
-    const o = new ChildrenMock();
-    Component.mount(document.body, o);
-    expect(document.body.innerHTML).toEqual('<ul><li></li></ul>');
-    document.body.innerHTML = '';
+test('children render', (done) => {
+    const $ref = bind(create`<ul><li></li></ul>`);
+    $zone.appendChild($ref);
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual('<ul><li></li></ul>');
+    done();
 });
 test('nested child observe render', (done) => {
-    const $mockState = new State({list: []});
-    const o = new ObserveChildMock($mockState);
-    Component.mount(document.body, o);
-    $mockState.set({list: [1, 2, 3, 4]});
-    expect(document.body.innerHTML)
-        .toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
-    document.body.innerHTML = '';
+    const $ref = bind(create`<ul>${[]}</ul>`);
+    const mockState = new State({list: []});
+    const $$updater = update($ref);
+    $zone.appendChild($ref);
+    mockState.set({list: [1, 2, 3, 4]});
+    $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual('<ul><li>1</li><li>2</li><li>3</li><li>4</li></ul>');
     done();
 });
 test('nested child observe double render', (done) => {
-    const $mockState = new State({list: []});
-    const o = new ObserveChildMock($mockState);
-    Component.mount(document.body, o);
-    $mockState.set({list: [1, 2, 3, 4]});
-    $mockState.set({list: [1, 2]});
-    expect(document.body.innerHTML)
-        .toEqual('<ul><li>1</li><li>2</li></ul>');
-    document.body.innerHTML = '';
+    const $ref = bind(create`<ul>${[]}</ul>`);
+    const mockState = new State({list: []});
+    const $$updater = update($ref);
+    $zone.appendChild($ref);
+    mockState.set({list: [1, 2, 3, 4]});
+    $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
+    mockState.set({list: [1, 2]});
+    $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual('<ul><li>1</li><li>2</li></ul>');
     done();
 });
 test('nested coponent on effect', (done) =>{
-    const o = new Test6();
-    Component.mount(document.body, o);
-    expect(document.body.innerHTML)
-        .toEqual(
-            `<div><p><span>1</span><span>2</span><span>3</span><span>4</span></p></div>`.trim()
-        );
-    document.body.innerHTML = '';
+    const $$createChild = (k)=>bind(create`<span>${k}</span>`);
+    const $ref = bind(create`
+        <p>
+            ${[1, 2].map($$createChild)}
+            ${[3, 4].map($$createChild)}
+        </p>
+    `);
+    $zone.appendChild($ref);
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result.replace(/[\n\r\s]/g, '')).toEqual(`<p><span>1</span><span>2</span><span>3</span><span>4</span></p>`);
     done();
 });

@@ -5,7 +5,6 @@ const createContextualFragment = (html) => {
     div.innerHTML = html;
     return div.children[0]; // so hokey it's not even funny
 };
-let rangeGroup = [];
 Range.prototype.createContextualFragment = (
     (html) => createContextualFragment(html)
 );
@@ -22,28 +21,32 @@ Range.prototype.createContextualFragment = (
 //     };
 // };
 
-global.document.createRange = () => ({
-    setStart: () => { },
-    setEnd: () => { },
-    getBoundingClientRect: () => {
-        return {right: 0};
-    },
-    getClientRects: () => [],
-    createContextualFragment,
-    commonAncestorContainer: {
-        nodeName: 'BODY',
-        ownerDocument: document,
-    },
-    selectNodeContents: (node) => {
-        if (!(node instanceof Node)) {
-            throw new Error('must elements');
-        }
-        rangeGroup = Array.from(node.childNodes);
-    },
-    deleteContents: ()=> {
-        for (const node of rangeGroup) {
-            node.remove();
-        }
-        rangeGroup = [];
-    },
-});
+global.document.createRange = () => {
+    const context = ({
+        rangeGroup: [],
+        setStart: () => { },
+        setEnd: () => { },
+        getBoundingClientRect: () => {
+            return {right: 0};
+        },
+        getClientRects: () => [],
+        createContextualFragment,
+        commonAncestorContainer: {
+            nodeName: 'BODY',
+            ownerDocument: document,
+        },
+        selectNodeContents: (node) => {
+            if (!(node instanceof Node)) {
+                throw new Error('must elements');
+            }
+            context.rangeGroup = Array.from(node.childNodes);
+        },
+        deleteContents: ()=> {
+            for (const node of context.rangeGroup) {
+                node.remove();
+            }
+            context.rangeGroup = [];
+        },
+    });
+    return context;
+};

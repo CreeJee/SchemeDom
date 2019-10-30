@@ -18,28 +18,27 @@ const _clearDom = (mountDom) => {
 const attributeEffect = ($ref, attributeName) => (value) => {
     $ref.attributes[attributeName].value = value;
 };
-const slotEffect = ($ref, $self) => (value) => {
+const slotEffect = ($ref, $self) => (value, oldValue = []) => {
     const fragment = document.createDocumentFragment();
-    _clearDom($ref);
-    if (!Array.isArray(value)) {
-        value = [];
+    if ($self.nodeValue !== '') {
+        //when create mode
+        _clearDom($ref);
     }
-    for (let slot of value) {
-        switch (slot.nodeType) {
-        case Node.DOCUMENT_FRAGMENT_NODE:
-            break;
-        default:
-            slot = _extractFragment(slot);
+    for (const oldSlot of oldValue) {
+        // dirty fix (when compare and remove nodes)
+        const fragment = oldSlot.fragment;
+        if (Array.isArray(fragment)) {
+            for (const realSlot of fragment) {
+                realSlot.remove();
+            }
         }
-        fragment.append(slot);
+    }
+    for (const slot of value) {
+        fragmentEffect(fragment, $self)(slot);
     }
     $ref.appendChild(fragment);
 };
-const fragmentEffect = ($ref, $self) => (fragment, effect) => {
-    // tricky solution
-    if ($self.nodeValue !== '') {
-        $self.nodeValue = '';
-    }
+const fragmentEffect = ($ref, $self) => (fragment, old, effect) => {
     $ref.appendChild(fragment);
 };
 const textEffect = ($ref) => (value) => {
@@ -49,7 +48,7 @@ const _invokeAttach = (groupRef, uid, findEffect) => {
     if (!isNaN(uid)) {
         const effect = Effect.get(uid);
         const attachFunctor = findEffect(effect);
-        attachFunctor(effect.value, effect);
+        attachFunctor(effect.value, undefined, effect);
         effect.attach(attachFunctor);
         groupRef.push(uid);
     }
@@ -169,8 +168,9 @@ export const Effect = class Effect {
      * @param {any} v
      */
     notify(v) {
+        const old = this.value;
         this._value = v;
-        this.effect();
+        this.effect(v, old);
     }
     /**
      * gain value
@@ -181,11 +181,13 @@ export const Effect = class Effect {
     }
     /**
      * side effect exec
+     * @param {any} value
+     * @param {any} oldValue
      */
-    effect() {
+    effect(value = this.value, oldValue = undefined) {
         for (const handler of this.handlers) {
             // do not context things
-            handler(this._value);
+            handler(this.value, oldValue, this);
         }
     }
     /**
@@ -248,17 +250,20 @@ export const bind = (element) => {
         case Node.TEXT_NODE:
             // we will need multiple Effect
             {
-                _nextNode.nodeValue = _nextNode.nodeValue.replace(/[\r\n\s]+/g, '');
-                const group = Effect.unMarkGroup(_nextNode.nodeValue);
+                let expr = _nextNode.nodeValue.replace(/[\r\n\s]+/g, '');
+                const group = Effect.unMarkGroup(expr);
+                const parent = _nextNode.parentNode;
                 for (const uid of group) {
+                    expr = expr.replace(Effect.mark(uid), '');
+                    _nextNode.nodeValue = expr;
                     _invokeAttach(
                         mutationGroup,
                         uid,
                         ({value}) => {
                             return value instanceof Array ?
-                                slotEffect(_nextNode.parentNode, _nextNode) :
+                                slotEffect(parent, _nextNode) :
                                 value instanceof DocumentFragment ?
-                                    fragmentEffect(_nextNode.parentNode, _nextNode) :
+                                    fragmentEffect(parent, _nextNode) :
                                     textEffect(_nextNode);
                         }
                     );
