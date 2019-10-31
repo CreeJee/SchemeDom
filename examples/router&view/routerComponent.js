@@ -1,6 +1,6 @@
-import {State} from '../../src/State.js';
-import {ObserveComponent} from '../../src/ObserveComponent.js';
-import Component from '../../src/Component.js';
+import {State} from '../../lib/State.js';
+import {ObserveComponent} from '../../lib/ObserveComponent.js';
+import Component from '../../lib/Component.js';
 // TODO: route match;
 export const $state = new State({path: '/', routes: []});
 

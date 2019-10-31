@@ -1,9 +1,8 @@
-
-import {Component} from '../../../src/Component.js';
+import {Component} from '../../../lib/Component.js';
 /**
- * Info page Component
+ * User page Component
  */
-export default class Info extends Component {
+export default class User extends Component {
     /**
      * @param {VNode.create} u
      * @return {DocumentFragment}
@@ -15,7 +14,7 @@ export default class Info extends Component {
                     <li><a href="./a">main</a></li>
                 </ul>   
             </nav>
-            <h1>info</h1>
+            <h1>user</h1>
         `;
     }
 }

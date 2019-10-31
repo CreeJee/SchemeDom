@@ -11,11 +11,11 @@
 
 <body>
     <div id="App"></div>
-    <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
+    <script lib="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
     <script type="module">
-        import { Component } from "../src/Component.js";
-        import { State } from "../src/State.js";
-        import { ObserveComponent } from "../src/ObserveComponent.js";
+        import { Component } from "../lib/Component.js";
+        import { State } from "../lib/State.js";
+        import { ObserveComponent } from "../lib/ObserveComponent.js";
 
         const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
         class TableCellComponent extends Component {

@@ -10,9 +10,9 @@
     <section id="router"></section>
     <script type="module">
         import { RouterComponent,$state } from "./routerComponent.js"
-        import { Component } from "../../src/Component.js";
-        import { State } from "../../src/State.js";
-        import { ObserveComponent } from "../../src/ObserveComponent.js";
+        import { Component } from "../../lib/Component.js";
+        import { State } from "../../lib/State.js";
+        import { ObserveComponent } from "../../lib/ObserveComponent.js";
         window.start = performance.now();
         window.router = new RouterComponent();
         Component.mount(document.getElementById("router"),router);

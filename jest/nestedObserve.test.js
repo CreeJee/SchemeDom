@@ -1,4 +1,4 @@
-import State from '../src/State.js';
+import State from '../lib/State.js';
 import {VNode} from '../index.js';
 const {create, bind, update, remove, Effect} = VNode;
 
@@ -50,12 +50,14 @@ test('nested child observe double render', (done) => {
     $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
     mockState.set({list: [1, 2]});
     $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
+    mockState.set({list: [1]});
+    $$updater`<ul>${mockState.list.map((v)=>bind(create`<li>${v}</li>`))}</ul>`;
     result = $zone.innerHTML;
     $zone.innerHTML = '';
-    expect(result).toEqual('<ul><li>1</li><li>2</li></ul>');
+    expect(result).toEqual('<ul><li>1</li></ul>');
     done();
 });
-test('nested coponent on effect', (done) =>{
+test('nested coponent on effect', (done) => {
     const $$createChild = (k)=>bind(create`<span>${k}</span>`);
     const $ref = bind(create`
         <p>
@@ -66,6 +68,23 @@ test('nested coponent on effect', (done) =>{
     $zone.appendChild($ref);
     result = $zone.innerHTML;
     $zone.innerHTML = '';
-    expect(result.replace(/[\n\r\s]/g, '')).toEqual(`<p><span>1</span><span>2</span><span>3</span><span>4</span></p>`);
+    expect(result.replace(/[\n\r\s]/g, ''))
+        .toEqual(
+            `<p><span>1</span><span>2</span><span>3</span><span>4</span></p>`
+        );
     done();
+});
+test('created node remove', () => {
+    const $ref = bind(create`<span></span>`);
+    $zone.append($ref);
+    remove($ref);
+    result = $zone.innerHTML;
+    expect(result).toEqual('');
+});
+test('low level observe on Effect', () => {
+    const $ref = bind(create`<p>${1}</p>`);
+    $zone.append($ref);
+    Effect.get(Effect.watch.length-1).notify(100);
+    result = $zone.innerHTML;
+    expect(result).toEqual('<p>100</p>');
 });

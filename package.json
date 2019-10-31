@@ -1,13 +1,14 @@
 {
   "name": "schemedom",
   "version": "0.0.1",
-  "description": "Reactive state and control dom like DB scheme",
+  "description": "observe dom light renderer",
   "main": "index.js",
   "scripts": {
     "test": "jest"
   },
   "keywords": [
-    "Scheme"
+    "DOM",
+    "JS"
   ],
   "author": "CreeJee",
   "license": "MIT",
@@ -34,5 +35,17 @@
     "setupFiles": [
       "./jest/mockup/document.createRange.js"
     ]
-  }
+  },
+  "directories": {
+    "example": "example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CreeJee/SchemeDom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CreeJee/SchemeDom/issues",
+    "email": "000as00060@gmail.com"
+  },
+  "homepage": "https://github.com/CreeJee/SchemeDom#readme"
 }
