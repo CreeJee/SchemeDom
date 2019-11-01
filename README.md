@@ -1,6 +1,7 @@
 # SchemeDom
 
 > 이 저장소는 [Tagged Templates](https://developer.mozilla.org/ko/docs/Web/JavaScript/Reference/Template_literals#Tagged_templates) 의 문법을 보고 "dom재어도 저런식으로 골라서 상태만 뽑아내는 형태로 하면 괜찮을것같다" 라는 아이디어에 기인한 프로젝트입니다.
+
 > SchemeDom is js library when light data binding for dom
 
 ## Installation
