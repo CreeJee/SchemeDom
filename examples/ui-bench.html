@@ -11,7 +11,7 @@
 
 <body>
     <div id="App"></div>
-    <script lib="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
+    <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
     <script type="module">
         import { Component } from "../lib/Component.js";
         import { State } from "../lib/State.js";
@@ -26,8 +26,7 @@
             render(u) {
                 const { text } = this;
                 const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
-                debugger;
-                $dom.addEventListener('click',() => console.log("Click", text));
+                $dom.firstElementChild.addEventListener('click',() => console.log("Click", text));
                 return $dom;
             }
         }
@@ -37,12 +36,14 @@
             }
             render(u, attr, ...children) {
                 const { active, id, props } = this.props;
+                const idNodes = u(new TableCellComponent('#' + id));
+                const propNodes = props.map((text) => u(new TableCellComponent(text)));
                 return u`<tr 
                     class='TableRow ${active ? 'active' : ''}' 
                     data-id='${id}'
                 >
-                    ${u(new TableCellComponent('#' + id))   }
-                    ${props.map((text) => u(new TableCellComponent(text)))}   
+                    ${idNodes}
+                    ${propNodes}   
                 </tr>`
             }
         }
@@ -51,10 +52,10 @@
                 super(props);
             }
             render(u, attr, ...children) {
-                debugger;
+                const trComponent = this.props.items.map((item) => u(new TableRowComponent(item)));
                 return u`<table class='Table'>
                     <tbody id='tbody'>
-                        ${this.props.items.map((item) => u(new TableRowComponent(item)))}
+                        ${trComponent}
                     </tbody>
                 </table>`;
             }

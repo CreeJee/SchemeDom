@@ -11,7 +11,7 @@ test('create render', () => {
     $zone.innerHTML = '';
     expect(result).toEqual('<span></span>');
 });
-test('update render', (done) => {
+test('update text render', (done) => {
     const $ref = bind(create`<span>${''}</span>`);
     const $$updater = update($ref);
     $zone.appendChild($ref);
@@ -19,6 +19,16 @@ test('update render', (done) => {
     result = $zone.innerHTML;
     $zone.innerHTML = '';
     expect(result).toEqual('<span>yellow</span>');
+    done();
+});
+test('update attribute render', (done) => {
+    const $ref = bind(create`<span class='${30}'></span>`);
+    const $$updater = update($ref);
+    $zone.appendChild($ref);
+    $$updater`<span class='${20}'></span>`;
+    result = $zone.innerHTML;
+    $zone.innerHTML = '';
+    expect(result).toEqual(`<span class="20"></span>`);
     done();
 });
 test('children render', (done) => {
