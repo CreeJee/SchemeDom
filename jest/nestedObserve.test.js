@@ -1,6 +1,6 @@
 import State from '../lib/State.js';
 import {VNode} from '../index.js';
-const {create, bind, update, remove, Effect} = VNode;
+const {generate, create, bind, update, remove, Effect} = VNode;
 
 
 const $zone = document.body;
@@ -22,13 +22,13 @@ test('update text render', (done) => {
     done();
 });
 test('update attribute render', (done) => {
-    const $ref = bind(create`<span class='${30}'></span>`);
+    const $ref = bind(create`<span class='9 ${30}'></span>`);
     const $$updater = update($ref);
     $zone.appendChild($ref);
     $$updater`<span class='${20}'></span>`;
     result = $zone.innerHTML;
     $zone.innerHTML = '';
-    expect(result).toEqual(`<span class="20"></span>`);
+    expect(result).toEqual(`<span class="9 20"></span>`);
     done();
 });
 test('children render', (done) => {
@@ -97,4 +97,16 @@ test('low level observe on Effect', () => {
     Effect.get(Effect.watch.length-1).notify(100);
     result = $zone.innerHTML;
     expect(result).toEqual('<p>100</p>');
+    remove($ref);
 });
+test('view observe', () => {
+    const store = {value: 10};
+    const render = (u)=>u`<span>${store.value}</span>`;
+    const $ref = generate(store, render);
+    $zone.appendChild($ref);
+    store.value = 20;
+    result = $zone.innerHTML;
+    expect(result).toEqual('<span>20</span>');
+    remove($ref);
+});
+
