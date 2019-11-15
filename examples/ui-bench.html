@@ -10,34 +10,31 @@
 </head>
 
 <body>
-    <div id="App"></div>
+    <div id="App">
+        <div class='Main' id="Main">
+        </div>
+    </div>
     <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
     <script type="module">
-        import { Component } from "../lib/Component.js";
-        import { State } from "../lib/State.js";
-        import { ObserveComponent } from "../lib/ObserveComponent.js";
-
+        
+        import {VNode} from '/index.js';
+        const {generate, create, bind, update, remove, Effect} = VNode;
         const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
-        class TableCellComponent extends Component {
-            constructor(text) {
-                super();
-                this.text = text;
-            }
-            render(u) {
-                const { text } = this;
+        const tableCellView = (cell) => generate(
+            cell,
+            (u) => {
+                const {text} = cell;
                 const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
                 $dom.firstElementChild.addEventListener('click',() => console.log("Click", text));
                 return $dom;
             }
-        }
-        class TableRowComponent extends Component {
-            constructor(props) {
-                super(props);
-            }
-            render(u, attr, ...children) {
-                const { active, id, props } = this.props;
-                const idNodes = u(new TableCellComponent('#' + id));
-                const propNodes = props.map((text) => u(new TableCellComponent(text)));
+        );
+        const tableRowView = (row) => generate(
+            row,
+            (u) => {  
+                const { active, id, props } = row;
+                const idNodes = tableCellView({text: '#' + id});
+                const propNodes = props.map((text) => tableCellView({text}));
                 return u`<tr 
                     class='TableRow ${active ? 'active' : ''}' 
                     data-id='${id}'
@@ -46,133 +43,115 @@
                     ${propNodes}   
                 </tr>`
             }
-        }
-        class TableComponent extends Component {
-            constructor(props) {
-                super(props);
-            }
-            render(u, attr, ...children) {
-                const trComponent = this.props.items.map((item) => u(new TableRowComponent(item)));
+        );
+        const tableView = (table) => generate(
+            table,
+            (u) => {
+                const trComponent = table.items.map((item) => tableRowView(item));
                 return u`<table class='Table'>
                     <tbody id='tbody'>
                         ${trComponent}
                     </tbody>
                 </table>`;
             }
-        }
-        class AnimBoxComponent extends Component {
-            constructor($state) {
-                super($state);
-            }
-            render(u, attribute, ...children) {
-                let { time, id } = this.props;
+        )
+        const AnimBoxView = (animBox) => generate(
+            animBox,
+            (u) => {
+                let { time, id } = animBox;
                 return u`
-                    <div
-                        data-id='${id}',
-                        class='AnimBox',
+                    <div 
+                        data-id='${id}' 
+                        class='AnimBox'
                         style='${generateStyleProp({
                             background: `rgba(0,0,0,${(0.5 + ((time % 10) / 10))})`,
                             'border-radius': `${(time % 10)}px`
                         })}'
                     >
-                        
                     </div>
                 `;
             }
-        }
-        class AnimComponent extends Component {
-            constructor(props) {
-                super(props);
-            }
-            render(u, attribute, ...children) {
+        )
+        const AnimView = (anim) => generate(
+            anim,
+            (u) => {
                 return u`
                     <div class='Anim'>
-                        ${this.props.items.map(
-                            (item) => u(new AnimBoxComponent(item))
+                        ${anim.items.map(
+                            (item) => AnimBoxView(item)
                         )}
                     </div>
                 `;
             }
-        }
-        class TreeLeafComponent extends Component {
-            constructor(props) {
-                super(props);
-            }
-            render(u) {
-                let { id } = this.props
+        );
+        const treeLeafView = (treeLeaf) => generate(
+            treeLeaf,
+            (u) => {
+                let { id } = treeLeaf;
                 return u`
-                    <li class='TreeLeaf'>
-                        ${id}
-                    </li>
+                    <li class='TreeLeaf'>${id}</li>
                 `;
             }
-        }
-        class TreeNodeComponent extends Component {
-            constructor(props) {
-                super(props);
-            }
-            render(u, attribute, ...children) {
+        );
+        const treeNodeView = (treeNode) => generate(
+            treeNode,
+            (u) => {
                 return u`<ul class='TreeNode'>
-                    ${this.props.children.map(
-                        (item) => u(new (item.container ? TreeNodeComponent : TreeLeafComponent)(item))
+                    ${treeNode.children.map(
+                        (item) => (item.container ? treeNodeView : treeLeafView)(item)
                     )}    
                 </ul>`;
             }
-        }
-        class TreeComponent extends Component {
-            constructor(props) {
-                super(props);
+        );
+        const treeView = (tree) => generate(
+            tree,
+            (u) => {
+                return u`<div class='Tree'>${treeNodeView(tree)}</div>`;
             }
-            render(u, attribute, ...children) {
-                return u`<div class='Tree'>${u(new TreeNodeComponent(this.props))}</div>`;
-            }
-        }
-
-
-        class MainComponent extends Component {
-            constructor() {
-                super();
-                this.$state = {};
-            }
-            render(u, { text }, ...children) {
-                const { $state } = this;
+        );
+        const mainView = (state) => generate(
+            state,
+            (u) => {
 
                 let component = null;
-                let { location } = $state;
+                let { location } = state;
                 switch (location) {
                     case 'table':
-                        component = u(new TableComponent($state.table))
+                        component = tableView(state.table)
                         break;
                     case 'anim':
-                        component = u(new AnimComponent($state.anim))
+                        component = AnimView(state.anim)
                         break;
                     case 'tree':
-                        component = u(new TreeComponent($state.tree.root))
+                        component = treeView(state.tree.root)
                         break;
                     default:
                         break;
                 }
-                return u`<div class='Main'>${component}</div>`;
+                return component;
             }
-        }
-
-        uibench.init("SchemeDom-just-append", "1.0.1");
+        )
+        uibench.init("SchemeDom-just-append", "1.0.2");
 
         // test function
         
-        const _clearDom = (mountDom) => {
-            const range = document.createRange();
-            range.selectNodeContents(mountDom);
-            range.deleteContents();
-        };
+        // const _clearDom = (mountDom) => {
+        //     const range = document.createRange();
+        //     range.selectNodeContents(mountDom);
+        //     range.deleteContents();
+        // };
         document.addEventListener("DOMContentLoaded", (e) => {
-            const container = document.querySelector("#App");
-            let component = new MainComponent();
+            const container = document.querySelector("#Main");
+            let currentView = null;
             uibench.run(
                 (state, mode) => {
-                    _clearDom(container)
-                    component.$state = state;
-                    Component.mount(container, component);
+                    // if(mode === 'init'){
+                        if (currentView !== null) {
+                            remove(currentView);
+                        }
+                        currentView = mainView(state);
+                        container.appendChild(currentView);
+                    // }
                 },
                 (samples) => {
                     document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";

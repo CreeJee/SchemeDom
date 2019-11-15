@@ -47,6 +47,11 @@ global.document.createRange = () => {
             }
             context.rangeGroup = [];
         },
+        insertNode: (node) => {
+            context.rangeGroup.push(
+                ...(node instanceof DocumentFragment ? node.childNodes : [node])
+            );
+        },
     });
     return context;
 };
