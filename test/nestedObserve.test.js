@@ -9,6 +9,7 @@ test('create render', () => {
     $zone.append(create`<span></span>`);
     result = $zone.innerHTML;
     $zone.innerHTML = '';
+    console.log(result);
     expect(result).toEqual('<span></span>');
 });
 test('update text render', (done) => {
@@ -21,6 +22,7 @@ test('update text render', (done) => {
     expect(result).toEqual('<span>yellow</span>');
     done();
 });
+
 test('update attribute render', (done) => {
     const $ref = bind(create`<span class='9 ${30}'></span>`);
     const $$updater = update($ref);

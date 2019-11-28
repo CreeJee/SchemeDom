@@ -25,7 +25,8 @@
             (u) => {
                 const {text} = cell;
                 const $dom = u`<td class='TableCell'>${text ? text : ''}</td>`;
-                $dom.firstElementChild.addEventListener('click',() => console.log("Click", text));
+                const event = () => console.log("Click", text);
+                $dom.addEventListener('click',event);
                 return $dom;
             }
         );
@@ -48,6 +49,7 @@
             table,
             (u) => {
                 const trComponent = table.items.map((item) => tableRowView(item));
+                debugger;
                 return u`<table class='Table'>
                     <tbody id='tbody'>
                         ${trComponent}
@@ -128,6 +130,7 @@
                     default:
                         break;
                 }
+                // debugger;
                 return component;
             }
         )
@@ -145,13 +148,13 @@
             let currentView = null;
             uibench.run(
                 (state, mode) => {
-                    // if(mode === 'init'){
+                    if (mode === 'init') {
                         if (currentView !== null) {
                             remove(currentView);
                         }
-                        currentView = mainView(state);
+                        currentView = bind(mainView(state));
                         container.appendChild(currentView);
-                    // }
+                    }
                 },
                 (samples) => {
                     document.body.innerHTML = "<pre>" + JSON.stringify(samples, null, " ") + "</pre>";
