@@ -16,8 +16,8 @@ npm install schemedom
 ## Usage
 
 ```javascript
-import { VNode } from "schemedom";
-const { create, bind, update, remove, generate, Effect } = VNode;
+import { View } from "schemedom";
+const { create, bind, update, remove, generate, Effect } = View;
 
 let $ref = null;
 let $$mutation = null;

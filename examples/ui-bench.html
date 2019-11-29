@@ -17,8 +17,8 @@
     <script src="https://localvoid.github.io/uibench-base/0.1.0/uibench.js"></script>
     <script type="module">
         
-        import {VNode} from '/index.js';
-        const {generate, create, bind, update, remove, Effect} = VNode;
+        import {View} from '/index.js';
+        const {generate, create, bind, update, remove, Effect} = View;
         const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
         const tableCellView = (cell) => generate(
             cell,

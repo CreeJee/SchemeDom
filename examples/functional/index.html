@@ -9,9 +9,10 @@
 <body>
     <section id="router"></section>
     <script type="module">
-        import { create, bind, update, remove, Effect } from "../../lib/core/VNode.js";
+        import {Effect} from '../../lib/core/Effect.js';
+        import { create, bind, update, remove } from "../../lib/core/View.js";
         const createEach = (v) => (create`<li>${v}</li>`);
-        const createChild = (size) => bind(create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`);
+        const createChild = (size) => create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`;
 
         // const $variable = 1;
         // const $ref1 = bind(create`<p>${$variable}</p>`);

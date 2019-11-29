@@ -1,6 +1,6 @@
 import State from '../lib/State.js';
-import {VNode} from '../index.js';
-const {generate, create, bind, update, remove, Effect} = VNode;
+import {View} from '../index.js';
+const {generate, create, bind, update, remove, Effect} = View;
 
 
 const $zone = document.body;
