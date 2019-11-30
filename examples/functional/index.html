@@ -25,7 +25,7 @@
 
         const $refChild = createChild(10);
         const $$updateRef = update($refChild);
-        const $refGroup = bind(create`<div class='root'>
+        const $refGroup = bind(create`<div class='root' proptest="${1}">
             ${createChild(5)}   
             ${$refChild}
         </div>`);
