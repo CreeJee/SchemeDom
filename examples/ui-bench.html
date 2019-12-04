@@ -18,7 +18,7 @@
     <script type="module">
         
         import {View} from '/index.js';
-        const {generate, create, bind, update, remove, Effect} = View;
+        const {mount, generate, create, bind, update, remove, Effect} = View;
         const generateStyleProp = (obj) => Object.entries(obj).map(([k, v]) => `${k}:${v};`).join('');
         const tableCellView = (cell) => generate(
             cell,
@@ -49,7 +49,6 @@
             table,
             (u) => {
                 const trComponent = table.items.map((item) => tableRowView(item));
-                debugger;
                 return u`<table class='Table'>
                     <tbody id='tbody'>
                         ${trComponent}
@@ -61,8 +60,7 @@
             animBox,
             (u) => {
                 let { time, id } = animBox;
-                return u`
-                    <div 
+                return u`<div 
                         data-id='${id}' 
                         class='AnimBox'
                         style='${generateStyleProp({
@@ -77,27 +75,24 @@
         const AnimView = (anim) => generate(
             anim,
             (u) => {
-                return u`
-                    <div class='Anim'>
+                return u`<div class='Anim'>
                         ${anim.items.map(
                             (item) => AnimBoxView(item)
                         )}
-                    </div>
-                `;
+                    </div>`;
             }
         );
         const treeLeafView = (treeLeaf) => generate(
             treeLeaf,
             (u) => {
                 let { id } = treeLeaf;
-                return u`
-                    <li class='TreeLeaf'>${id}</li>
-                `;
+                return u`<li class='TreeLeaf'>${id}</li>`;
             }
         );
         const treeNodeView = (treeNode) => generate(
             treeNode,
             (u) => {
+                // debugger;
                 return u`<ul class='TreeNode'>
                     ${treeNode.children.map(
                         (item) => (item.container ? treeNodeView : treeLeafView)(item)
@@ -148,12 +143,15 @@
             let currentView = null;
             uibench.run(
                 (state, mode) => {
+                    window.start = performance.now();
                     if (mode === 'init') {
                         if (currentView !== null) {
                             remove(currentView);
                         }
-                        currentView = bind(mainView(state));
-                        container.appendChild(currentView);
+                        currentView = mainView(state);
+                        mount(container, currentView);
+                    } else {
+                        currentView.mutation(mainView(state));
                     }
                 },
                 (samples) => {

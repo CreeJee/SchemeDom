@@ -26,8 +26,12 @@
         const $refChild = createChild(10);
         const $$updateRef = update($refChild);
         const $refGroup = bind(create`<div class='root' proptest="${1}">
-            ${createChild(5)}   
-            ${$refChild}
+            <div class='slot-1'>            
+                ${createChild(5)}
+            </div>
+            <div>   
+                ${$refChild}
+            </div>
         </div>`);
         document.body.appendChild($refGroup);
         console.log($refChild);
