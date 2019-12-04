@@ -10,7 +10,7 @@
     <section id="router"></section>
     <script type="module">
         import {Effect} from '../../lib/core/Effect.js';
-        import { create, bind, update, remove } from "../../lib/core/View.js";
+        import { create, update, remove, mount } from "../../lib/core/View.js";
         const createEach = (v) => (create`<li>${v}</li>`);
         const createChild = (size) => create`<div><ul>${Array.from({length: size},(v,k) => k).map(createEach)}</ul></div>`;
 
@@ -25,15 +25,15 @@
 
         const $refChild = createChild(10);
         const $$updateRef = update($refChild);
-        const $refGroup = bind(create`<div class='root' proptest="${1}">
+        const $refGroup = create`<div class='root' proptest="${1}">
             <div class='slot-1'>            
                 ${createChild(5)}
             </div>
             <div>   
                 ${$refChild}
             </div>
-        </div>`);
-        document.body.appendChild($refGroup);
+        </div>`;
+        mount(document.body, $refGroup);
         console.log($refChild);
         remove($refChild);
         
